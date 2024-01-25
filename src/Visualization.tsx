@@ -37,7 +37,6 @@ export const Visualization = ({ player }: VisualizationProps) => {
         <strong>decoding samples</strong>
         <div>count: {vizData?.decodingChunks?.length}</div>
         <div className="viz-column-inner">
-          {' '}
           {vizData?.decodingChunks?.map((timestamp) => {
             return (
               <div key={timestamp} className="viz-frame">
