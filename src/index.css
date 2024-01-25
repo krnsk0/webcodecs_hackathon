@@ -23,13 +23,14 @@ body {
   justify-content: flex-start;
   align-items: flex-start;
   overflow-y: scroll;
+  scrollbar-width: none;
+  font-size: 0.9em;
+  line-height: 0.9em;
 }
 .metrics::-webkit-scrollbar {
   display: none;
 }
-.metrics {
-  scrollbar-width: none;
-}
+
 .metrics-row {
   display: flex;
   flex-direction: row;
@@ -93,12 +94,10 @@ button {
   background-color: white;
   overflow-y: scroll;
   max-height: 20em;
+  scrollbar-width: none;
 }
 .viz-column-inner::-webkit-scrollbar {
   display: none;
-}
-.viz-column-inner {
-  scrollbar-width: none;
 }
 .viz-frame {
   font-size: 1em;
