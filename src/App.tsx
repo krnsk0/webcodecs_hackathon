@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AdPod, Player } from './player/player';
 import { Visualization } from './Visualization';
-import { Data } from './Data';
+import { Metrics } from './Metrics';
 
 const mockAdResponse: AdPod[] = [
   // febreeze 480p 24fps AVC
@@ -46,7 +46,7 @@ function App() {
     <>
       <div className="upper">
         <div ref={canvasContainer} id="canvas-container"></div>
-        <Data />
+        <Metrics player={player} />
       </div>
       <div className="controls">
         <button onClick={startEverything}>restart [spacebar]</button>

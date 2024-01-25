@@ -239,4 +239,15 @@ export class Player {
       bufferedFrames: this.videoPlayer?.frameBuffer,
     };
   }
+
+  public getMetrics() {
+    return {
+      url: this.adResponse[this.adPodIndex]?.video || '',
+      sourceWidth: this.adVideoDecoderConfigs[this.adPodIndex]?.codedWidth || 0,
+      sourceHeight:
+        this.adVideoDecoderConfigs[this.adPodIndex]?.codedHeight || 0,
+      sourceFramerate: this.videoPlayer?.getFramerate() || 0,
+      sourceCodec: this.adVideoDecoderConfigs[this.adPodIndex]?.codec || '',
+    };
+  }
 }

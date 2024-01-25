@@ -280,4 +280,9 @@ export class VideoPlayer {
       this.log('error drawing to canvas', error);
     }
   }
+
+  public getFramerate(): number {
+    if (this.frameDuration === undefined) return 0;
+    return 1000 / this.frameDuration;
+  }
 }

@@ -14,7 +14,7 @@ body {
   justify-content: space-around;
   align-items: center;
 }
-.data {
+.metrics {
   width: 20em;
   height: var(--canvas-height);
   background-color: white;
@@ -23,6 +23,14 @@ body {
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
+}
+.metrics-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 0.5em;
 }
 #canvas-container {
   display: flex;
