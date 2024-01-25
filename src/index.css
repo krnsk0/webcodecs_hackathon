@@ -43,6 +43,7 @@ body {
   justify-content: center;
   height: var(--canvas-height);
   width: calc(var(--canvas-height) * (16 / 9));
+  border: 1px solid black;
 }
 
 canvas {
@@ -55,6 +56,9 @@ canvas {
   display: flex;
   justify-content: center;
   width: 100%;
+}
+button {
+  font-size: 1.2em;
 }
 .viz-outer {
   width: 100%;
