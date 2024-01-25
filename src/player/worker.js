@@ -1,10 +1,5 @@
-interface DecodedFrame {
-  timestamp: number;
-  videoFrame: VideoFrame;
-}
-
 onmessage = async (event) => {
-  const { timestamp, videoFrame } = event.data as DecodedFrame;
+  const { timestamp, videoFrame } = event.data;
   const startTime = Date.now();
   const bitmap = await createImageBitmap(videoFrame);
   const duration = Date.now() - startTime;

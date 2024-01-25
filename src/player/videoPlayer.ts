@@ -18,7 +18,7 @@ export interface BufferEntry {
 
 const workDelegator = new WorkDelegator(
   FRAME_CONVERSION_WORKERS,
-  new URL('./worker.ts', import.meta.url)
+  new URL('./worker.js', import.meta.url)
 );
 
 const ASSUMED_CHANNELS_FOR_NOW = 2;
