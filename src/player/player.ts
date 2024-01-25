@@ -162,18 +162,18 @@ export class Player {
     await Promise.all([
       this.audioPlayer.setup({
         audioDecoderConfig,
-        encodedAudioChunks
+        encodedAudioChunks,
       }),
       this.videoPlayer.setup({
         videoDecoderConfig,
         adPodIndex,
-        encodedVideoChunks
-      })
+        encodedVideoChunks,
+      }),
     ]);
 
     await Promise.all([
       this.audioPlayer.prebuffer(),
-      this.videoPlayer.prebuffer()
+      this.videoPlayer.prebuffer(),
     ]);
 
     // START PLAYBACK
@@ -183,7 +183,10 @@ export class Player {
         if (!this.currentAdStartTime)
           throw new Error('no current ad start time');
         if (!this.videoPlayer) return;
-        const currentTimeMs = this.audioPlayer === undefined ? Date.now() - this.currentAdStartTime : 1_000 * this.audioPlayer.getCurrentTime();
+        const currentTimeMs =
+          this.audioPlayer === undefined
+            ? Date.now() - this.currentAdStartTime
+            : 1_000 * this.audioPlayer.getCurrentTime();
 
         this.videoPlayer.renderFrame({
           ctx: this.ctx,
@@ -219,7 +222,7 @@ export class Player {
     }
   }
 
-  async playAdResponse(adResponse: AdPod[]) {
+  public async playAdResponse(adResponse: AdPod[]) {
     this.reset();
     this.adResponse = adResponse;
     this.createCanvasElement();
@@ -228,7 +231,7 @@ export class Player {
     this.startPlayingAds();
   }
 
-  visualizationData() {
+  public visualizationData() {
     return {
       demuxedChunks: this.adEncodedVideoChunks[this.adPodIndex],
       decodingChunks: this.videoPlayer?.timestampsBeingDecoded,

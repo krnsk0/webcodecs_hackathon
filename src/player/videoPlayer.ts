@@ -37,10 +37,10 @@ export class VideoPlayer {
 
   private videoDecoder?: VideoDecoder;
 
-  async setup({
+  public async setup({
     videoDecoderConfig,
     adPodIndex,
-    encodedVideoChunks
+    encodedVideoChunks,
   }: {
     videoDecoderConfig: VideoDecoderConfig;
     adPodIndex: number;
@@ -155,7 +155,7 @@ export class VideoPlayer {
   }
 
   // aims to get us up to PREBUFFER_TARGET before starting playback
-  async prebuffer() {
+  public async prebuffer() {
     let interval: ReturnType<typeof setTimeout>;
     const prebufferStartTime = Date.now();
     const promise = new Promise<void>((resolve) => {
@@ -247,7 +247,7 @@ export class VideoPlayer {
     return bufferEntry;
   }
 
-  renderFrame({
+  public renderFrame({
     ctx,
     canvas,
     currentTimeMs,
