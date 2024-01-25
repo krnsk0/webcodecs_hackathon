@@ -1,4 +1,5 @@
 import {
+  BUFFER_TARGET,
   OPTIMIZE_FOR_LATENCY_FLAG,
   PREBUFFER_TARGET,
   REQUEST_HARDWARE_ACCELERATION,
@@ -100,7 +101,7 @@ export class VideoPlayer {
     );
   }
 
-  private pushToDecoder(targetCts: number) {
+  private startDecodingUpToCts(targetCts: number) {
     if (!this.decoder) throw new Error('no decoder set up yet');
     this.log(`attempting to push to decoder up to target cts ${targetCts}`);
     while (
@@ -125,10 +126,12 @@ export class VideoPlayer {
     const promise = new Promise<void>((resolve, reject) => {
       this.prebufferPromiseResolver = resolve;
       this.log('prebuffering');
-      this.pushToDecoder(PREBUFFER_TARGET);
+      this.startDecodingUpToCts(PREBUFFER_TARGET);
+
+      // sometimes pushing up to the DTS
       timeout = setTimeout(() => {
         reject(new Error('prebuffering timed out'));
-      }, 1000);
+      }, 5000);
     });
     promise.then(() => {
       this.prebufferingComplete = true;
@@ -141,9 +144,9 @@ export class VideoPlayer {
   }
 
   // purge frames more than 2 behind current time
-  // we don't purge right after paint because the compositing in the browser
+  // we don't purge right after paint because compositing in the browser
   // is threaded, and if we purge before compoisiting is complete we risk
-  // seeing a black screen as the frame's memory has been release at draw time
+  // seeing a black screen as the frame's memory has been released at draw time
   private purgeFramesBeforeTime(currentTimeMs: number) {
     if (this.frameDuration === undefined)
       throw new Error('no framerate; did prebuffering complete?');
@@ -154,6 +157,19 @@ export class VideoPlayer {
       if (!bufferEntry) return;
       bufferEntry.data?.close();
     }
+  }
+
+  private findFrameForTime(currentTimeMs: number): BufferEntry | undefined {
+    const frameDuration = this.frameDuration;
+    if (frameDuration === undefined)
+      throw new Error('no known frame duration; did prebuffering complete?');
+
+    const bufferEntry = this.frameBuffer.find(
+      (frame) =>
+        frame.timestamp <= currentTimeMs &&
+        frame.timestamp + frameDuration > currentTimeMs
+    );
+    return bufferEntry;
   }
 
   renderFrame({
@@ -167,18 +183,22 @@ export class VideoPlayer {
   }) {
     if (!ctx) throw new Error('no context provided to renderFrame');
     if (!canvas) throw new Error('no canvas provided to renderFrame');
-    // this.log('renderFrame', currentTimeMs);
 
+    this.startDecodingUpToCts(currentTimeMs + BUFFER_TARGET);
+    this.purgeFramesBeforeTime(currentTimeMs);
+
+    const bufferEntry = this.findFrameForTime(currentTimeMs);
+    this.log('renderFrame', bufferEntry);
+    // TODO - log a dropped frame
+    if (!bufferEntry) return;
+
+    // for bitmap rendering later
     // if (ctx instanceof ImageBitmapRenderingContext) {
-    //   ctx.transferFromImageBitmap(this.bufferedFrames[0].buffer);
-    // } else if (ctx instanceof CanvasRenderingContext2D) {
-    //   ctx.drawImage(
-    //     this.bufferedFrames[0].buffer,
-    //     0,
-    //     0,
-    //     canvas.width,
-    //     canvas.height
-    //   );
+    //   ctx.transferFromImageBitmap(bufferEntry.data);
     // }
+
+    if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.drawImage(bufferEntry.data, 0, 0, canvas.width, canvas.height);
+    }
   }
 }
