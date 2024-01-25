@@ -1,5 +1,6 @@
 import { USE_BITMAP_RENDERER_CANVAS } from './config';
 import { Demuxer } from './demuxer';
+import { VideoPlayer } from './videoPlayer';
 
 interface PlayerOptions {
   container: HTMLElement;
@@ -15,13 +16,14 @@ export class Player {
   private adResponse: AdPod[] = [];
   private mp4BlobPromises: Promise<Blob>[] = [];
   private demuxer: Demuxer = new Demuxer();
+  private videoPlayer?: VideoPlayer;
   private demuxReadyPromises: Promise<void>[] = [];
   private adVideoDecoderConfigs: VideoDecoderConfig[] = [];
   private adAudioDecoderConfigs: AudioDecoderConfig[] = [];
   private adEncodedAudioChunks: EncodedAudioChunk[][] = [];
   private adEncodedVideoChunks: EncodedVideoChunk[][] = [];
   private adPlaybackPromises: Promise<void>[] = [];
-  private currentAdPodIndex = -1;
+  private adPodIndex = -1;
 
   constructor(private options: PlayerOptions) {}
 
@@ -38,7 +40,7 @@ export class Player {
     this.adEncodedAudioChunks = [];
     this.adEncodedVideoChunks = [];
     this.adPlaybackPromises = [];
-    this.currentAdPodIndex = 0;
+    this.adPodIndex = 0;
   }
 
   private log(...args: unknown[]) {
@@ -148,6 +150,12 @@ export class Player {
     const encodedVideoChunks = this.adEncodedVideoChunks[adPodIndex];
     if (!encodedVideoChunks) throw new Error('no video chunks ready');
     this.log(`starting ad ${adPodIndex}`);
+    this.videoPlayer = new VideoPlayer();
+    await this.videoPlayer.setup({
+      videoDecoderConfig,
+      adPodIndex,
+      encodedVideoChunks,
+    });
   }
 
   private async startPlayingAds(): Promise<void> {
@@ -156,7 +164,7 @@ export class Player {
       await this.demuxReadyPromises[i];
 
       // kick off playback
-      this.currentAdPodIndex = i;
+      this.adPodIndex = i;
       const adPlaybackPromise = this.startAd({
         videoDecoderConfig: this.adVideoDecoderConfigs[i],
         adPodIndex: i,
@@ -178,7 +186,7 @@ export class Player {
 
   visualizationData() {
     return {
-      demuxedChunks: this.adEncodedVideoChunks[this.currentAdPodIndex],
+      demuxedChunks: this.adEncodedVideoChunks[this.adPodIndex],
     };
   }
 }
