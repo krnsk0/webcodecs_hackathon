@@ -34,8 +34,10 @@ export class VideoPlayer {
   private frameDuration?: number;
   private hasDecoderFlushed = false;
   private hasDecoderFlushStarted = false;
-
   private videoDecoder?: VideoDecoder;
+  private lastDrawnFrameTimstamp?: number;
+  private framesSuccessullyRendered = 0;
+  private firstFrameDisplayTimestamp?: number;
 
   public async setup({
     videoDecoderConfig,
@@ -270,6 +272,9 @@ export class VideoPlayer {
       return;
     }
 
+    // don't draw the same frame twice
+    if (bufferEntry.timestamp === this.lastDrawnFrameTimstamp) return;
+
     try {
       if (ctx instanceof ImageBitmapRenderingContext) {
         ctx.transferFromImageBitmap(bufferEntry.bitmap);
@@ -278,11 +283,25 @@ export class VideoPlayer {
       }
     } catch (error: unknown) {
       this.log('error drawing to canvas', error);
+    } finally {
+      if (this.firstFrameDisplayTimestamp === undefined) {
+        this.firstFrameDisplayTimestamp = Date.now();
+      }
+      this.framesSuccessullyRendered += 1;
+      this.lastDrawnFrameTimstamp = bufferEntry.timestamp;
     }
   }
 
-  public getFramerate(): number {
+  public getSourceFramerate(): number {
     if (this.frameDuration === undefined) return 0;
     return 1000 / this.frameDuration;
+  }
+
+  public getPlaybackFramerate(): number {
+    if (this.firstFrameDisplayTimestamp === undefined) return 0;
+    return (
+      this.framesSuccessullyRendered /
+      ((Date.now() - this.firstFrameDisplayTimestamp) / 1000)
+    );
   }
 }

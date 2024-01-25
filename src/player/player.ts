@@ -258,9 +258,10 @@ export class Player {
       sourceWidth: this.adVideoDecoderConfigs[this.adPodIndex]?.codedWidth || 0,
       sourceHeight:
         this.adVideoDecoderConfigs[this.adPodIndex]?.codedHeight || 0,
-      sourceFramerate: this.videoPlayer?.getFramerate() || 0,
+      sourceFramerate: this.videoPlayer?.getSourceFramerate() || 0,
       sourceCodec: this.adVideoDecoderConfigs[this.adPodIndex]?.codec || '',
       animationFramerate: this.getAnimationFramerate(),
+      playbackFramerate: this.videoPlayer?.getPlaybackFramerate() || 0,
     };
   }
 }
