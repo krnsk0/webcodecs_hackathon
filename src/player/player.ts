@@ -20,6 +20,8 @@ export class Player {
   private adAudioDecoderConfigs: AudioDecoderConfig[] = [];
   private adEncodedAudioChunks: EncodedAudioChunk[][] = [];
   private adEncodedVideoChunks: EncodedVideoChunk[][] = [];
+  private adPlaybackPromises: Promise<void>[] = [];
+  private currentAdPodIndex = -1;
 
   constructor(private options: PlayerOptions) {}
 
@@ -28,6 +30,15 @@ export class Player {
     this.canvasEl = undefined;
     this.ctx = undefined;
     this.adResponse = [];
+    this.mp4BlobPromises = [];
+    this.demuxer = new Demuxer();
+    this.demuxReadyPromises = [];
+    this.adVideoDecoderConfigs = [];
+    this.adAudioDecoderConfigs = [];
+    this.adEncodedAudioChunks = [];
+    this.adEncodedVideoChunks = [];
+    this.adPlaybackPromises = [];
+    this.currentAdPodIndex = 0;
   }
 
   private log(...args: unknown[]) {
@@ -127,11 +138,47 @@ export class Player {
     }
   }
 
+  private async startAd({
+    videoDecoderConfig,
+    adPodIndex,
+  }: {
+    videoDecoderConfig: VideoDecoderConfig;
+    adPodIndex: number;
+  }): Promise<void> {
+    const encodedVideoChunks = this.adEncodedVideoChunks[adPodIndex];
+    if (!encodedVideoChunks) throw new Error('no video chunks ready');
+    this.log(`starting ad ${adPodIndex}`);
+  }
+
+  private async startPlayingAds(): Promise<void> {
+    for (let i = 0; i < this.adResponse.length; i += 1) {
+      // wait for ad to fetch and then demux if it hasn't
+      await this.demuxReadyPromises[i];
+
+      // kick off playback
+      this.currentAdPodIndex = i;
+      const adPlaybackPromise = this.startAd({
+        videoDecoderConfig: this.adVideoDecoderConfigs[i],
+        adPodIndex: i,
+      });
+      this.adPlaybackPromises.push(adPlaybackPromise);
+      // TODO: catch/handle errors here; skip this ad?
+      await adPlaybackPromise;
+    }
+  }
+
   async playAdResponse(adResponse: AdPod[]) {
     this.reset();
     this.adResponse = adResponse;
     this.createCanvasElement();
     this.startFetchingAds();
     this.startDemuxingAds();
+    this.startPlayingAds();
+  }
+
+  visualizationData() {
+    return {
+      demuxedChunks: this.adEncodedVideoChunks[this.currentAdPodIndex],
+    };
   }
 }

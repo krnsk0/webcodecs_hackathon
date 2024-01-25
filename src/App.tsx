@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AdPod, Player } from './player/player';
+import { Visualization } from './Visualization';
 
 const mockAdResponse: AdPod[] = [
   // discover 1080p 24fps AVC
@@ -21,12 +22,12 @@ const mockAdResponse: AdPod[] = [
 
 function App() {
   const canvasContainer = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<Player | undefined>(undefined);
+  const [player, setPlayerState] = useState<Player>();
 
   const startEverything = () => {
     if (!canvasContainer.current) return;
     const player = new Player({ container: canvasContainer.current });
-    playerRef.current = player;
+    setPlayerState(player);
     player.playAdResponse(mockAdResponse);
   };
 
@@ -40,6 +41,7 @@ function App() {
       <div className="controls">
         <button onClick={startEverything}>reset</button>
       </div>
+      <Visualization player={player} />
     </>
   );
 }

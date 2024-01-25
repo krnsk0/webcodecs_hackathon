@@ -12,3 +12,23 @@ canvas {
   justify-content: center;
   width: 100%;
 }
+.viz-outer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+.viz-column {
+  width: 25%;
+  border: 1px solid black;
+  margin: 1em;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+.viz-frame {
+  font-size: 0.7em;
+  border: 1px solid grey;
+  width: 3em;
+}
