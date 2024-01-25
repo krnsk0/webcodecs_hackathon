@@ -179,11 +179,11 @@ export class Player {
     // START PLAYBACK
     this.currentAdStartTime = Date.now();
     return new Promise((resolve) => {
-      const animationFrameCallback = () => {
+      const animationFrameCallback = async () => {
         if (!this.currentAdStartTime)
           throw new Error('no current ad start time');
         if (!this.videoPlayer) return;
-        const currentTimeMs = Date.now() - this.currentAdStartTime;
+        const currentTimeMs = this.audioPlayer === undefined ? Date.now() - this.currentAdStartTime : 1_000 * this.audioPlayer.getCurrentTime();
 
         this.videoPlayer.renderFrame({
           ctx: this.ctx,
@@ -193,6 +193,7 @@ export class Player {
 
         if (this.videoPlayer.isDonePlaying()) {
           this.log(`done playing ad ${adPodIndex}`);
+          await this.audioPlayer?.stop();
           resolve();
         } else requestAnimationFrame(animationFrameCallback);
       };
