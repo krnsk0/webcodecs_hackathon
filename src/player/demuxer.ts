@@ -8,17 +8,22 @@ import MP4Box, {
 } from 'mp4box';
 import { Writer } from './writer';
 
+export interface EncodedVideoChunkWithDts {
+  encodedVideoChunk: EncodedVideoChunk;
+  dts: number;
+}
+
 type OnVideoDecoderConfigReady = (config: VideoDecoderConfig) => void;
 type OnAudioDecoderConfigReady = (config: AudioDecoderConfig) => void;
-type OnVideoChunk = (chunk: EncodedVideoChunk) => void;
+type OnVideoChunk = (chunk: EncodedVideoChunkWithDts) => void;
 type OnAudioChunk = (chunk: EncodedAudioChunk) => void;
 
 interface DemuxerSetup {
   mp4Blob: Blob;
   onVideoDecoderConfigReady: OnVideoDecoderConfigReady;
   onAudioDecoderConfigReady: OnAudioDecoderConfigReady;
-  onAudioChunk: OnVideoChunk;
-  onVideoChunk: OnAudioChunk;
+  onAudioChunk: OnAudioChunk;
+  onVideoChunk: OnVideoChunk;
 }
 
 export class Demuxer {
@@ -144,14 +149,18 @@ export class Demuxer {
       }
       if (trackId === videoTrackInfo.id) {
         for (const sample of samples) {
-          onVideoChunk(
-            new EncodedVideoChunk({
+          onVideoChunk({
+            encodedVideoChunk: new EncodedVideoChunk({
               type: sample.is_sync ? 'key' : 'delta',
+              // composition time stamp (CTS) is the display order
               timestamp: (1000 * sample.cts) / sample.timescale,
               duration: (1000 * sample.duration) / sample.timescale,
               data: sample.data,
-            })
-          );
+            }),
+            // this *MIGHT* be useful in figuring out how many
+            // chunks to push to get a certain cts back
+            dts: (1000 * sample.dts) / sample.timescale,
+          });
         }
       }
     };

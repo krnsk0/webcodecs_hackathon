@@ -1,20 +1,26 @@
 import {
   OPTIMIZE_FOR_LATENCY_FLAG,
+  PREBUFFER_TARGET,
   REQUEST_HARDWARE_ACCELERATION,
 } from './config';
+import { EncodedVideoChunkWithDts } from './demuxer';
 
 interface BufferEntry {
-  buffer: ImageBitmap;
+  data: VideoFrame;
   timestamp: number;
 }
 
 export class VideoPlayer {
   timestampsBeingDecoded: number[] = [];
   timestampsBeingConverted: number[] = [];
-  bufferedFrames: BufferEntry[] = [];
   private adPodIndex?: number;
-  private encodedVideoChunks: EncodedVideoChunk[] = [];
+  private encodedVideoChunks: EncodedVideoChunkWithDts[] = [];
   private decoder?: VideoDecoder;
+  private lastDtsPushedToDecoder: number = -Infinity;
+  private prebufferPromiseResolver?: () => void;
+  private prebufferingComplete = false;
+  bufferedFrames: BufferEntry[] = [];
+  private highestBufferedCts: number = -Infinity;
 
   async setup({
     videoDecoderConfig,
@@ -23,7 +29,7 @@ export class VideoPlayer {
   }: {
     videoDecoderConfig: VideoDecoderConfig;
     adPodIndex: number;
-    encodedVideoChunks: EncodedVideoChunk[];
+    encodedVideoChunks: EncodedVideoChunkWithDts[];
   }) {
     this.adPodIndex = adPodIndex;
     this.encodedVideoChunks = encodedVideoChunks;
@@ -53,7 +59,7 @@ export class VideoPlayer {
   }
 
   private log(...args: unknown[]) {
-    console.log('[Player]', ...args);
+    console.log(`[VideoPlayer][ad ${this.adPodIndex}]`, ...args);
   }
 
   private handleDecoderErrors(error: unknown) {
@@ -67,8 +73,18 @@ export class VideoPlayer {
   }
 
   private async handleDecoderOutput(videoFrame: VideoFrame) {
-    this.log('decoder output', videoFrame);
-    this.removeTimestampFromDecodingChunksList(videoFrame.timestamp);
+    if (!this.decoder) return;
+    const timestamp = videoFrame.timestamp;
+    this.log(`decoder output ${timestamp}`);
+    this.removeTimestampFromDecodingChunksList(timestamp);
+    this.highestBufferedCts = Math.max(this.highestBufferedCts, timestamp);
+    if (!this.prebufferingComplete && timestamp >= PREBUFFER_TARGET) {
+      this.prebufferPromiseResolver?.();
+    }
+    this.bufferedFrames.push({
+      data: videoFrame,
+      timestamp,
+    });
   }
 
   isDonePlaying() {
@@ -78,21 +94,44 @@ export class VideoPlayer {
     );
   }
 
-  pushToDecoder(targetTimestamp: number) {
+  pushToDecoder(targetCts: number) {
     if (!this.decoder) throw new Error('no decoder set up yet');
-    const chunk = this.encodedVideoChunks.shift();
-    console.log('chunk: ', chunk);
-    if (!chunk) return;
-
-    this.timestampsBeingDecoded.push(chunk.timestamp);
-    this.decoder.decode(chunk);
+    this.log(`attempting to push to decoder up to target cts ${targetCts}`);
+    while (
+      this.lastDtsPushedToDecoder < targetCts &&
+      this.encodedVideoChunks.length > 0
+    ) {
+      const chunk = this.encodedVideoChunks.shift();
+      if (!chunk) return;
+      this.log(
+        `pushing chunk w/ cts ${chunk.encodedVideoChunk.timestamp} and dts ${chunk.dts.toFixed(2)}`
+      );
+      this.lastDtsPushedToDecoder = chunk.dts;
+      this.timestampsBeingDecoded.push(chunk.encodedVideoChunk.timestamp);
+      this.decoder.decode(chunk.encodedVideoChunk);
+    }
   }
 
-  // get at least first frame
+  // aims to get us up to PREBUFFER_TARGET before starting playback
   async prebuffer() {
-    this.log('prebuffering');
-    const firstFrameTimestamp = this.encodedVideoChunks[0].timestamp;
-    this.pushToDecoder(firstFrameTimestamp);
+    let timeout: ReturnType<typeof setTimeout>;
+    const prebufferStartTime = Date.now();
+    const promise = new Promise<void>((resolve, reject) => {
+      this.prebufferPromiseResolver = resolve;
+      this.log('prebuffering');
+      this.pushToDecoder(PREBUFFER_TARGET);
+      timeout = setTimeout(() => {
+        reject(new Error('prebuffering timed out'));
+      }, 1000);
+    });
+    promise.then(() => {
+      this.prebufferingComplete = true;
+      this.log(
+        `prebuffering complete; took ${Date.now() - prebufferStartTime}ms`
+      );
+      clearTimeout(timeout);
+    });
+    return promise;
   }
 
   renderFrame({

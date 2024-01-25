@@ -1,5 +1,5 @@
 import { USE_BITMAP_RENDERER_CANVAS } from './config';
-import { Demuxer } from './demuxer';
+import { Demuxer, EncodedVideoChunkWithDts } from './demuxer';
 import { VideoPlayer } from './videoPlayer';
 
 interface PlayerOptions {
@@ -21,7 +21,7 @@ export class Player {
   private adVideoDecoderConfigs: VideoDecoderConfig[] = [];
   private adAudioDecoderConfigs: AudioDecoderConfig[] = [];
   private adEncodedAudioChunks: EncodedAudioChunk[][] = [];
-  private adEncodedVideoChunks: EncodedVideoChunk[][] = [];
+  private adEncodedVideoChunks: EncodedVideoChunkWithDts[][] = [];
   private adPlaybackPromises: Promise<void>[] = [];
   private adPodIndex = -1;
   private currentAdStartTime?: number;
@@ -213,6 +213,7 @@ export class Player {
     return {
       demuxedChunks: this.adEncodedVideoChunks[this.adPodIndex],
       decodingChunks: this.videoPlayer?.timestampsBeingDecoded,
+      bufferedFrames: this.videoPlayer?.bufferedFrames,
     };
   }
 }

@@ -25,9 +25,14 @@ export const Visualization = ({ player }: VisualizationProps) => {
         <div>count: {vizData?.demuxedChunks?.length}</div>
         <div className="viz-column-inner">
           {vizData?.demuxedChunks?.map((chunk) => {
+            const timestamp = chunk.encodedVideoChunk.timestamp;
             return (
-              <div key={chunk.timestamp} className="viz-frame">
-                {chunk.timestamp}
+              <div
+                key={timestamp}
+                className="viz-frame"
+                style={{ backgroundColor: 'darkblue' }}
+              >
+                {timestamp}
               </div>
             );
           })}
@@ -39,7 +44,11 @@ export const Visualization = ({ player }: VisualizationProps) => {
         <div className="viz-column-inner">
           {vizData?.decodingChunks?.map((timestamp) => {
             return (
-              <div key={timestamp} className="viz-frame">
+              <div
+                key={timestamp}
+                className="viz-frame"
+                style={{ backgroundColor: 'darkred' }}
+              >
                 {timestamp}
               </div>
             );
@@ -47,7 +56,21 @@ export const Visualization = ({ player }: VisualizationProps) => {
         </div>
       </div>
       <div className="viz-column-outer">
-        <div className="viz-column-inner"></div>
+        <strong>buffered frames</strong>
+        <div>count: {vizData?.bufferedFrames?.length}</div>
+        <div className="viz-column-inner">
+          {vizData?.bufferedFrames?.map((frame) => {
+            return (
+              <div
+                key={frame.timestamp}
+                className="viz-frame"
+                style={{ backgroundColor: 'darkgreen' }}
+              >
+                {frame.timestamp}
+              </div>
+            );
+          })}
+        </div>
       </div>
       <div className="viz-column-outer">
         <div className="viz-column-inner"></div>
