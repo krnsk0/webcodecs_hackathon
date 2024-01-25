@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AdPod, Player } from './player/player';
 import { Visualization } from './Visualization';
 
@@ -31,11 +31,21 @@ function App() {
     player.playAdResponse(mockAdResponse);
   };
 
+  useEffect(() => {
+    const listener = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        startEverything();
+      }
+    };
+    document.addEventListener('keydown', listener);
+    return () => document.removeEventListener('keydown', listener);
+  });
+
   return (
     <>
       <div ref={canvasContainer} id="canvas-container"></div>
       <div className="controls">
-        <button onClick={startEverything}>restart</button>
+        <button onClick={startEverything}>restart [spacebar]</button>
       </div>
       <Visualization player={player} />
     </>
