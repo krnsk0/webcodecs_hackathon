@@ -28,7 +28,8 @@ export const Metrics = ({ player }: DataProps) => {
   const playbackFramerate = `${data?.playbackFramerate.toFixed(2) ?? '0'} fps`;
   const droppedFrames = data?.droppedFrames ?? 0;
   const bufferedTime = `${data?.bufferedTime.toFixed(2) ?? '0'} sec`;
-  const bufferSizeMb = `${((data?.bufferedSizeBytes ?? 0) / 1024 / 1024).toFixed(2)} MB`;
+  const bufferSizeMb = `${((data?.videoBufferSizeBytes ?? 0) / 1024 / 1024).toFixed(2)} MB`;
+  const audioBufferSizeMb = `${((data?.audioBufferSizeBytes ?? 0) / 1024 / 1024).toFixed(2)} MB`;
 
   return (
     <div className="metrics">
@@ -81,8 +82,12 @@ export const Metrics = ({ player }: DataProps) => {
         <span>{bufferedTime}</span>
       </div>
       <div className="metrics-row">
-        <span>buffer size</span>
+        <span>video buffer size</span>
         <span>{bufferSizeMb}</span>
+      </div>
+      <div className="metrics-row">
+        <span>audio buffer size</span>
+        <span>{audioBufferSizeMb}</span>
       </div>
     </div>
   );

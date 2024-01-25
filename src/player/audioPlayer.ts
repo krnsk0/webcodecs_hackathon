@@ -95,4 +95,9 @@ export class AudioPlayer {
   public stop(): Promise<void> {
     return this.audioContext.close();
   }
+
+  public getBufferSizeBytes() {
+    // TODO
+    return 0;
+  }
 }

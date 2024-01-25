@@ -348,7 +348,7 @@ export class VideoPlayer {
     return (this.highestBufferedCts - this.lastDrawnFrameTimstamp) / 1_000;
   }
 
-  public getBufferedSizeBytes(): number {
+  public getBufferSizeBytes(): number {
     if (this.isDonePlaying()) return 0;
     return this.encodedVideoChunks.reduce(
       (acc, chunk) => acc + chunk.encodedVideoChunk.byteLength,
