@@ -37,6 +37,7 @@ export class VideoPlayer {
   private highestBufferedCts: number = -Infinity;
   private frameDuration?: number;
   private hasDecoderFlushed = false;
+  private hasDecoderFlushStarted = false;
 
   private audioDecoder?: AudioDecoder;
   private videoDecoder?: VideoDecoder;
@@ -209,7 +210,7 @@ export class VideoPlayer {
     if (!this.videoDecoder) throw new Error('no decoder set up yet');
     if (NOISY_LOGS)
       this.log(`attempting to push to decoder up to target cts ${targetCts}`);
-    if (this.encodedVideoChunks.length === 0) {
+    if (this.encodedVideoChunks.length === 0 && !this.hasDecoderFlushStarted) {
       this.log(`no more chunks to push; attempting flush`);
       this.videoDecoder.flush().then(() => {
         this.hasDecoderFlushed = true;
