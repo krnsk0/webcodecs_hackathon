@@ -264,6 +264,8 @@ export class Player {
       playbackFramerate: this.videoPlayer?.getPlaybackFramerate() || 0,
       conversionFramerate: this.videoPlayer?.getConversionFramerate() || 0,
       decodeFramerate: this.videoPlayer?.getDecodeFramerate() || 0,
+      bufferedTime: this.videoPlayer?.getBufferedTimeSec() || 0,
+      bufferedSizeBytes: this.videoPlayer?.getBufferedSizeBytes() || 0,
     };
   }
 }

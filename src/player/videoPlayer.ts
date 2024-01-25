@@ -338,4 +338,19 @@ export class VideoPlayer {
       ((Date.now() - this.firstFrameDecodedTimestamp) / 1000)
     );
   }
+
+  public getBufferedTimeSec(): number {
+    if (this.isDonePlaying()) return 0;
+    if (this.highestBufferedCts === -Infinity) return 0;
+    if (this.lastDrawnFrameTimstamp === undefined) return 0;
+    return (this.highestBufferedCts - this.lastDrawnFrameTimstamp) / 1_000;
+  }
+
+  public getBufferedSizeBytes(): number {
+    if (this.isDonePlaying()) return 0;
+    return this.encodedVideoChunks.reduce(
+      (acc, chunk) => acc + chunk.encodedVideoChunk.byteLength,
+      0
+    );
+  }
 }

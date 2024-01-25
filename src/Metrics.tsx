@@ -26,6 +26,8 @@ export const Metrics = ({ player }: DataProps) => {
   const conversionFramerate = `${data?.conversionFramerate.toFixed(2) ?? '0'} fps`;
   const animationFramerate = `${data?.animationFramerate.toFixed(2) ?? '0'} fps`;
   const playbackFramerate = `${data?.playbackFramerate.toFixed(2) ?? '0'} fps`;
+  const bufferedTime = `${data?.bufferedTime.toFixed(2) ?? '0'} sec`;
+  const bufferSizeMb = `${((data?.bufferedSizeBytes ?? 0) / 1024 / 1024).toFixed(2)} MB`;
 
   return (
     <div className="metrics">
@@ -68,6 +70,14 @@ export const Metrics = ({ player }: DataProps) => {
         >
           {playbackFramerate}
         </span>
+      </div>
+      <div className="metrics-row">
+        <span>buffered time</span>
+        <span>{bufferedTime}</span>
+      </div>
+      <div className="metrics-row">
+        <span>buffer size</span>
+        <span>{bufferSizeMb}</span>
       </div>
     </div>
   );

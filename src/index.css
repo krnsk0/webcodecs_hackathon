@@ -24,6 +24,12 @@ body {
   align-items: flex-start;
   overflow-y: scroll;
 }
+.metrics::-webkit-scrollbar {
+  display: none;
+}
+.metrics {
+  scrollbar-width: none;
+}
 .metrics-row {
   display: flex;
   flex-direction: row;
