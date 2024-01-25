@@ -27,6 +27,7 @@ export class Player {
   private adPlaybackPromises: Promise<void>[] = [];
   private adPodIndex = -1;
   private currentAdStartTime?: number;
+  private animationFrameCallbackCount = 0;
 
   constructor(private options: PlayerOptions) {}
 
@@ -178,11 +179,13 @@ export class Player {
 
     // START PLAYBACK
     this.currentAdStartTime = Date.now();
+    this.animationFrameCallbackCount = 0;
     return new Promise((resolve) => {
       const animationFrameCallback = async () => {
         if (!this.currentAdStartTime)
           throw new Error('no current ad start time');
         if (!this.videoPlayer) return;
+        this.animationFrameCallbackCount += 1;
         const currentTimeMs =
           this.audioPlayer === undefined
             ? Date.now() - this.currentAdStartTime
@@ -240,6 +243,15 @@ export class Player {
     };
   }
 
+  private getAnimationFramerate() {
+    if (!this.currentAdStartTime) return 0;
+    return (
+      (this.animationFrameCallbackCount /
+        (Date.now() - this.currentAdStartTime)) *
+      1000
+    );
+  }
+
   public getMetrics() {
     return {
       url: this.adResponse[this.adPodIndex]?.video || '',
@@ -248,6 +260,7 @@ export class Player {
         this.adVideoDecoderConfigs[this.adPodIndex]?.codedHeight || 0,
       sourceFramerate: this.videoPlayer?.getFramerate() || 0,
       sourceCodec: this.adVideoDecoderConfigs[this.adPodIndex]?.codec || '',
+      animationFramerate: this.getAnimationFramerate(),
     };
   }
 }

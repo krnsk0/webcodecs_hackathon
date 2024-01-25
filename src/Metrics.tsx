@@ -22,6 +22,7 @@ export const Metrics = ({ player }: DataProps) => {
   const dimensions = `${data?.sourceWidth ?? 0}x${data?.sourceHeight ?? 0}`;
   const codec = data?.sourceCodec ?? 'unknown';
   const sourceFramerate = `${data?.sourceFramerate.toFixed(2) ?? '0'} fps`;
+  const animationFramerate = `${data?.animationFramerate.toFixed(2) ?? '0'} fps`;
   return (
     <div className="metrics">
       <div className="metrics-row">
@@ -37,8 +38,12 @@ export const Metrics = ({ player }: DataProps) => {
         <span>{codec}</span>
       </div>
       <div className="metrics-row">
-        <span>framerate</span>
+        <span>source framerate</span>
         <span>{sourceFramerate}</span>
+      </div>
+      <div className="metrics-row">
+        <span>browser framerate</span>
+        <span>{animationFramerate}</span>
       </div>
     </div>
   );
