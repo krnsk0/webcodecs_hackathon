@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { AdPod, Player } from './player/player';
 import { Visualization } from './Visualization';
 
@@ -31,15 +31,11 @@ function App() {
     player.playAdResponse(mockAdResponse);
   };
 
-  useEffect(() => {
-    startEverything();
-  }, []);
-
   return (
     <>
       <div ref={canvasContainer} id="canvas-container"></div>
       <div className="controls">
-        <button onClick={startEverything}>reset</button>
+        <button onClick={startEverything}>restart</button>
       </div>
       <Visualization player={player} />
     </>

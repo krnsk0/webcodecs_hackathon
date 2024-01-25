@@ -21,12 +21,15 @@ const workDelegator = new WorkDelegator(
   new URL('./worker.ts', import.meta.url)
 );
 
+const ASSUMED_CHANNELS_FOR_NOW = 2;
+const ASSUMED_SAMPLE_RATE_FOR_NOW = 48_000;
+const ASSUMED_CODEC_FOR_NOW = 'mp4a.40.2';
+
 export class VideoPlayer {
   timestampsBeingDecoded: number[] = [];
   timestampsBeingConverted: number[] = [];
   private adPodIndex?: number;
   private encodedVideoChunks: EncodedVideoChunkWithDts[] = [];
-  private decoder?: VideoDecoder;
   private lastDtsPushedToDecoder: number = -Infinity;
   private prebufferPromiseResolver?: () => void;
   private prebufferingComplete = false;
@@ -34,14 +37,29 @@ export class VideoPlayer {
   private highestBufferedCts: number = -Infinity;
   private frameDuration?: number;
 
+  private audioDecoder?: AudioDecoder;
+  private videoDecoder?: VideoDecoder;
+
+  private audioFrames: AudioData[] = [];
+
+  private audioContext = new AudioContext({
+    sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW,
+    latencyHint: 'playback'
+  });
+
+  private audioBuffer?: AudioBuffer;
+  private audioSource?: AudioBufferSourceNode;
+
   async setup({
     videoDecoderConfig,
     adPodIndex,
     encodedVideoChunks,
+    encodedAudioChunks
   }: {
     videoDecoderConfig: VideoDecoderConfig;
     adPodIndex: number;
     encodedVideoChunks: EncodedVideoChunkWithDts[];
+    encodedAudioChunks: EncodedAudioChunk[];
   }) {
     this.adPodIndex = adPodIndex;
     this.encodedVideoChunks = encodedVideoChunks;
@@ -60,18 +78,62 @@ export class VideoPlayer {
     };
 
     try {
+      const { supported, config } = await AudioDecoder.isConfigSupported({
+        codec: ASSUMED_CODEC_FOR_NOW,
+        sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW,
+        numberOfChannels: ASSUMED_CHANNELS_FOR_NOW,
+      });
+      if (!supported) throw new Error('audio config not supported');
+      this.audioDecoder = new AudioDecoder({
+        output: this.handleAudioDecoderOutput.bind(this),
+        error: this.handleAudioDecoderErrors.bind(this),
+      });
+      this.audioDecoder.configure(config);
+
+      for (let i = 0; i < encodedAudioChunks.length; i++) {
+        this.audioDecoder.decode(encodedAudioChunks[i]);
+      }
+      await this.audioDecoder.flush();
+      this.audioBuffer = new AudioBuffer({
+        numberOfChannels: ASSUMED_CHANNELS_FOR_NOW,
+        length: this.audioFrames.length * ASSUMED_SAMPLE_RATE_FOR_NOW,
+        sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW
+      });
+      for (let channel = 0; channel < this.audioFrames[0].numberOfChannels; channel++) {
+        const options = {
+          format: this.audioFrames[0].format,
+          planeIndex: channel
+        };
+        const destination = this.audioBuffer.getChannelData(channel);
+        let offset = 0;
+        for (const frame of this.audioFrames) {
+          const size = frame.allocationSize(options) / Float32Array.BYTES_PER_ELEMENT;
+          frame.copyTo(destination.subarray(offset, offset + size), options);
+          offset += size;
+        }
+      }
+      this.audioSource = this.audioContext.createBufferSource();
+      this.audioSource.buffer = this.audioBuffer;
+      this.audioSource.connect(this.audioContext.destination);
+      this.audioSource.start();
+      this.log('successfully configured audio decoder and have ' + this.audioFrames.length + ' frames', config);
+    } catch (error: unknown) {
+      this.log('error configuring audio decoder', error);
+    }
+
+    try {
       const { supported, config } =
         await VideoDecoder.isConfigSupported(decoderConfig);
-      if (!supported) throw new Error('config not supported');
-      this.decoder = new VideoDecoder({
+      if (!supported) throw new Error('video config not supported');
+      this.videoDecoder = new VideoDecoder({
         output: this.handleDecoderOutput.bind(this),
         error: this.handleDecoderErrors.bind(this),
       });
 
-      this.decoder.configure(decoderConfig);
-      this.log(`successfully configured decoder`, config);
+      this.videoDecoder.configure(decoderConfig);
+      this.log(`successfully configured video decoder`, config);
     } catch (error: unknown) {
-      this.log(`error configuring decoder`, error);
+      this.log(`error configuring video decoder`, error);
     }
   }
 
@@ -95,8 +157,16 @@ export class VideoPlayer {
     this.timestampsBeingConverted.splice(index, 1);
   }
 
+  private handleAudioDecoderOutput(audioFrame: AudioData) {
+    this.audioFrames.push(audioFrame);
+  }
+
+  private handleAudioDecoderErrors(error: unknown) {
+    this.log('audio decoder error', error);
+  }
+
   private async handleDecoderOutput(videoFrame: VideoFrame) {
-    if (!this.decoder) return;
+    if (!this.videoDecoder) return;
     const timestamp = videoFrame.timestamp;
     if (NOISY_LOGS) this.log(`decoder output ${timestamp}`);
 
@@ -116,14 +186,14 @@ export class VideoPlayer {
   }
 
   isDonePlaying() {
-    if (!this.decoder) throw new Error('no decoder set up yet');
+    if (!this.videoDecoder) throw new Error('no decoder set up yet');
     return (
       this.encodedVideoChunks.length === 0 && this.frameBuffer.length === 0
     );
   }
 
   private startDecodingUpToCts(targetCts: number) {
-    if (!this.decoder) throw new Error('no decoder set up yet');
+    if (!this.videoDecoder) throw new Error('no decoder set up yet');
     if (NOISY_LOGS)
       this.log(`attempting to push to decoder up to target cts ${targetCts}`);
     while (
@@ -138,7 +208,7 @@ export class VideoPlayer {
         );
       this.lastDtsPushedToDecoder = chunk.dts;
       this.timestampsBeingDecoded.push(chunk.encodedVideoChunk.timestamp);
-      this.decoder.decode(chunk.encodedVideoChunk);
+      this.videoDecoder.decode(chunk.encodedVideoChunk);
     }
   }
 
