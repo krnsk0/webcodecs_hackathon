@@ -84,8 +84,11 @@ export class VideoPlayer {
     this.highestBufferedCts = Math.max(this.highestBufferedCts, timestamp);
 
     if (!this.prebufferingComplete && timestamp >= PREBUFFER_TARGET) {
-      this.frameDuration = videoFrame.duration ?? undefined;
       this.prebufferPromiseResolver?.();
+    }
+
+    if (this.frameDuration === undefined) {
+      this.frameDuration = videoFrame.duration ?? undefined;
     }
 
     this.frameBuffer.push({
@@ -121,24 +124,32 @@ export class VideoPlayer {
 
   // aims to get us up to PREBUFFER_TARGET before starting playback
   async prebuffer() {
-    let timeout: ReturnType<typeof setTimeout>;
+    let interval: ReturnType<typeof setTimeout>;
     const prebufferStartTime = Date.now();
     const promise = new Promise<void>((resolve, reject) => {
       this.prebufferPromiseResolver = resolve;
       this.log('prebuffering');
       this.startDecodingUpToCts(PREBUFFER_TARGET);
 
-      // sometimes pushing up to the DTS
-      timeout = setTimeout(() => {
-        reject(new Error('prebuffering timed out'));
-      }, 5000);
+      // Sometimes pushing up to the target DTS isn't enough to get the decoder
+      // to emit. So, after a little delay start yeeting in frames until we get
+      // what we want
+      interval = setInterval(() => {
+        this.log('prebuffer did not complete; pushing more frames');
+        if (this.frameDuration === undefined) throw new Error('no framerate');
+        if (!this.prebufferingComplete) {
+          this.startDecodingUpToCts(
+            this.lastDtsPushedToDecoder + this.frameDuration
+          );
+        }
+      }, 50);
     });
     promise.then(() => {
       this.prebufferingComplete = true;
       this.log(
         `prebuffering complete; took ${Date.now() - prebufferStartTime}ms`
       );
-      clearTimeout(timeout);
+      clearInterval(interval);
     });
     return promise;
   }
