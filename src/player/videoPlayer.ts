@@ -19,8 +19,9 @@ export class VideoPlayer {
   private lastDtsPushedToDecoder: number = -Infinity;
   private prebufferPromiseResolver?: () => void;
   private prebufferingComplete = false;
-  bufferedFrames: BufferEntry[] = [];
+  frameBuffer: BufferEntry[] = [];
   private highestBufferedCts: number = -Infinity;
+  private frameDuration?: number;
 
   async setup({
     videoDecoderConfig,
@@ -76,12 +77,17 @@ export class VideoPlayer {
     if (!this.decoder) return;
     const timestamp = videoFrame.timestamp;
     this.log(`decoder output ${timestamp}`);
+
     this.removeTimestampFromDecodingChunksList(timestamp);
+
     this.highestBufferedCts = Math.max(this.highestBufferedCts, timestamp);
+
     if (!this.prebufferingComplete && timestamp >= PREBUFFER_TARGET) {
+      this.frameDuration = videoFrame.duration ?? undefined;
       this.prebufferPromiseResolver?.();
     }
-    this.bufferedFrames.push({
+
+    this.frameBuffer.push({
       data: videoFrame,
       timestamp,
     });
@@ -90,11 +96,11 @@ export class VideoPlayer {
   isDonePlaying() {
     if (!this.decoder) throw new Error('no decoder set up yet');
     return (
-      this.encodedVideoChunks.length === 0 && this.bufferedFrames.length === 0
+      this.encodedVideoChunks.length === 0 && this.frameBuffer.length === 0
     );
   }
 
-  pushToDecoder(targetCts: number) {
+  private pushToDecoder(targetCts: number) {
     if (!this.decoder) throw new Error('no decoder set up yet');
     this.log(`attempting to push to decoder up to target cts ${targetCts}`);
     while (
@@ -132,6 +138,22 @@ export class VideoPlayer {
       clearTimeout(timeout);
     });
     return promise;
+  }
+
+  // purge frames more than 2 behind current time
+  // we don't purge right after paint because the compositing in the browser
+  // is threaded, and if we purge before compoisiting is complete we risk
+  // seeing a black screen as the frame's memory has been release at draw time
+  private purgeFramesBeforeTime(currentTimeMs: number) {
+    if (this.frameDuration === undefined)
+      throw new Error('no framerate; did prebuffering complete?');
+    const frameBuffer = this.frameBuffer;
+    const cutoff = currentTimeMs - this.frameDuration * 2;
+    while (frameBuffer.length > 0 && frameBuffer[0].timestamp < cutoff) {
+      const bufferEntry = frameBuffer.shift();
+      if (!bufferEntry) return;
+      bufferEntry.data?.close();
+    }
   }
 
   renderFrame({
