@@ -1,6 +1,3 @@
-const ASSUMED_CHANNELS_FOR_NOW = 2;
-const ASSUMED_SAMPLE_RATE_FOR_NOW = 48_000;
-
 export class AudioPlayer {
   private audioDecoder?: AudioDecoder;
   private audioFrames: AudioData[] = [];
@@ -75,10 +72,16 @@ export class AudioPlayer {
       this.audioDecoder.decode(encodedAudioChunk);
     }
     await this.audioDecoder.flush();
+    let durationMicro = 0;
+    for (const audioFrame of this.audioFrames) {
+      durationMicro += audioFrame.duration;
+    }
+    this.log(`ad duration is ${durationMicro / 1_000_000}`);
     this.audioBuffer = new AudioBuffer({
-      numberOfChannels: ASSUMED_CHANNELS_FOR_NOW,
-      length: this.audioFrames.length * ASSUMED_SAMPLE_RATE_FOR_NOW,
-      sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW,
+      numberOfChannels: this.audioFrames[0].numberOfChannels,
+      length:
+        Math.ceil(durationMicro / 1_000_000) * this.audioFrames[0].sampleRate,
+      sampleRate: this.audioFrames[0].sampleRate,
     });
     const start = Date.now();
     for (
@@ -102,7 +105,7 @@ export class AudioPlayer {
     }
     this.log('buffered audio in ' + (Date.now() - start));
     this.audioContext = new AudioContext({
-      sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW,
+      sampleRate: this.audioFrames[0].sampleRate,
       latencyHint: 'interactive',
     });
     this.audioSource = this.audioContext.createBufferSource();
