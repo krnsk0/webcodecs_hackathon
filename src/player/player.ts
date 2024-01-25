@@ -184,11 +184,9 @@ export class Player {
         if (!this.currentAdStartTime)
           throw new Error('no current ad start time');
         if (!this.videoPlayer) return;
+        if (!this.audioPlayer) return;
         this.animationFrameCallbackCount += 1;
-        const currentTimeMs =
-          this.audioPlayer === undefined
-            ? Date.now() - this.currentAdStartTime
-            : 1_000 * this.audioPlayer.getCurrentTime();
+        const currentTimeMs = 1_000 * this.audioPlayer.getCurrentTime();
 
         this.videoPlayer.renderFrame({
           ctx: this.ctx,
