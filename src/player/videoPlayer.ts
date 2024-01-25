@@ -33,6 +33,7 @@ export class VideoPlayer {
   frameBuffer: BufferEntry[] = [];
   private highestBufferedCts: number = -Infinity;
   private frameDuration?: number;
+  private hasDecoderFlushed: boolean = false;
 
   async setup({
     videoDecoderConfig,
@@ -118,7 +119,9 @@ export class VideoPlayer {
   isDonePlaying() {
     if (!this.decoder) throw new Error('no decoder set up yet');
     return (
-      this.encodedVideoChunks.length === 0 && this.frameBuffer.length === 0
+      this.encodedVideoChunks.length === 0 &&
+      this.frameBuffer.length === 0 &&
+      this.hasDecoderFlushed
     );
   }
 
@@ -126,6 +129,13 @@ export class VideoPlayer {
     if (!this.decoder) throw new Error('no decoder set up yet');
     if (NOISY_LOGS)
       this.log(`attempting to push to decoder up to target cts ${targetCts}`);
+    if (this.encodedVideoChunks.length === 0) {
+      this.log(`no more chunks to push; attempting flush`);
+      this.decoder.flush().then(() => {
+        this.hasDecoderFlushed = true;
+      });
+    }
+
     while (
       this.lastDtsPushedToDecoder < targetCts &&
       this.encodedVideoChunks.length > 0
