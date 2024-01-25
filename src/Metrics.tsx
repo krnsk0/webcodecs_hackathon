@@ -22,6 +22,8 @@ export const Metrics = ({ player }: DataProps) => {
   const dimensions = `${data?.sourceWidth ?? 0}x${data?.sourceHeight ?? 0}`;
   const codec = data?.sourceCodec ?? 'unknown';
   const sourceFramerate = `${data?.sourceFramerate.toFixed(2) ?? '0'} fps`;
+  const decodeFramerate = `${data?.decodeFramerate.toFixed(2) ?? '0'} fps`;
+  const conversionFramerate = `${data?.conversionFramerate.toFixed(2) ?? '0'} fps`;
   const animationFramerate = `${data?.animationFramerate.toFixed(2) ?? '0'} fps`;
   const playbackFramerate = `${data?.playbackFramerate.toFixed(2) ?? '0'} fps`;
 
@@ -44,12 +46,28 @@ export const Metrics = ({ player }: DataProps) => {
         <span>{sourceFramerate}</span>
       </div>
       <div className="metrics-row">
+        <span>decode framerate</span>
+        <span>{decodeFramerate}</span>
+      </div>
+      <div className="metrics-row">
+        <span>bitmap framerate</span>
+        <span>{conversionFramerate}</span>
+      </div>
+      <div className="metrics-row">
         <span>browser framerate</span>
         <span>{animationFramerate}</span>
       </div>
       <div className="metrics-row">
         <span>playback framerate</span>
-        <span>{playbackFramerate}</span>
+        <span
+          style={{
+            backgroundColor: 'black',
+            color: 'white',
+            padding: '0 0.4em',
+          }}
+        >
+          {playbackFramerate}
+        </span>
       </div>
     </div>
   );

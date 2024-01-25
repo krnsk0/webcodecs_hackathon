@@ -44,13 +44,14 @@ function App() {
 
   return (
     <>
+      <div className="controls">
+        <button onClick={startEverything}>restart [spacebar]</button>
+      </div>
       <div className="upper">
         <div ref={canvasContainer} id="canvas-container"></div>
         <Metrics player={player} />
       </div>
-      <div className="controls">
-        <button onClick={startEverything}>restart [spacebar]</button>
-      </div>
+
       <Visualization player={player} />
     </>
   );

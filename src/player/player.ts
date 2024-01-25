@@ -262,6 +262,8 @@ export class Player {
       sourceCodec: this.adVideoDecoderConfigs[this.adPodIndex]?.codec || '',
       animationFramerate: this.getAnimationFramerate(),
       playbackFramerate: this.videoPlayer?.getPlaybackFramerate() || 0,
+      conversionFramerate: this.videoPlayer?.getConversionFramerate() || 0,
+      decodeFramerate: this.videoPlayer?.getDecodeFramerate() || 0,
     };
   }
 }

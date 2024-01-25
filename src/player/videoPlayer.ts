@@ -38,6 +38,10 @@ export class VideoPlayer {
   private lastDrawnFrameTimstamp?: number;
   private framesSuccessullyRendered = 0;
   private firstFrameDisplayTimestamp?: number;
+  private framesConverted = 0;
+  private firstFrameConversionTimestamp?: number;
+  private framesDecoded = 0;
+  private firstFrameDecodedTimestamp?: number;
 
   public async setup({
     videoDecoderConfig,
@@ -116,6 +120,12 @@ export class VideoPlayer {
     if (this.frameDuration === undefined) {
       this.frameDuration = videoFrame.duration ?? undefined;
     }
+
+    if (this.firstFrameDecodedTimestamp === undefined) {
+      this.firstFrameDecodedTimestamp = Date.now();
+    }
+
+    this.framesDecoded += 1;
 
     this.startConvertingFrame({ videoFrame, timestamp });
   }
@@ -215,6 +225,10 @@ export class VideoPlayer {
   }) {
     if (NOISY_LOGS) this.log(`finished conversion of frame ${timestamp}`);
     this.removeTimestampFromConvertingChunksList(timestamp);
+    if (this.firstFrameConversionTimestamp === undefined) {
+      this.firstFrameConversionTimestamp = Date.now();
+    }
+    this.framesConverted += 1;
     this.frameBuffer.push({
       bitmap,
       timestamp,
@@ -293,15 +307,35 @@ export class VideoPlayer {
   }
 
   public getSourceFramerate(): number {
+    if (this.isDonePlaying()) return 0;
     if (this.frameDuration === undefined) return 0;
     return 1000 / this.frameDuration;
   }
 
   public getPlaybackFramerate(): number {
+    if (this.isDonePlaying()) return 0;
     if (this.firstFrameDisplayTimestamp === undefined) return 0;
     return (
       this.framesSuccessullyRendered /
       ((Date.now() - this.firstFrameDisplayTimestamp) / 1000)
+    );
+  }
+
+  public getConversionFramerate(): number {
+    if (this.isDonePlaying()) return 0;
+    if (this.firstFrameConversionTimestamp === undefined) return 0;
+    return (
+      this.framesConverted /
+      ((Date.now() - this.firstFrameConversionTimestamp) / 1000)
+    );
+  }
+
+  public getDecodeFramerate(): number {
+    if (this.isDonePlaying()) return 0;
+    if (this.firstFrameDecodedTimestamp === undefined) return 0;
+    return (
+      this.framesDecoded /
+      ((Date.now() - this.firstFrameDecodedTimestamp) / 1000)
     );
   }
 }
