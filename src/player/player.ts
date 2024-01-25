@@ -1,5 +1,13 @@
+interface PlayerOptions {
+  container: HTMLElement;
+}
+
+export interface AdPod {
+  video: string;
+}
+
 export class Player {
-  constructor() {
-    console.log('Player constructor');
-  }
+  constructor(private options: PlayerOptions) {}
+
+  async playAdResponse(adResponse: AdPod[]) {}
 }
