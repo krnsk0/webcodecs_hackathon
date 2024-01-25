@@ -128,7 +128,7 @@ export class VideoPlayer {
   }
 
   isDonePlaying() {
-    if (!this.videoDecoder) throw new Error('no decoder set up yet');
+    if (!this.videoDecoder) false;
     return (
       this.encodedVideoChunks.length === 0 &&
       this.frameBuffer.length === 0 &&
