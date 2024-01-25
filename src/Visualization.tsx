@@ -21,8 +21,10 @@ export const Visualization = ({ player }: VisualizationProps) => {
   return (
     <div className="viz-outer">
       <div className="viz-column-outer">
-        <strong>demuxed samples</strong>
-        <div>count: {vizData?.demuxedChunks?.length}</div>
+        <div className="viz-column-header">
+          <strong>demuxed samples</strong>
+          <div>count: {vizData?.demuxedChunks?.length}</div>
+        </div>
         <div className="viz-column-inner">
           {vizData?.demuxedChunks?.map((chunk) => {
             const timestamp = chunk.encodedVideoChunk.timestamp;
@@ -39,8 +41,10 @@ export const Visualization = ({ player }: VisualizationProps) => {
         </div>
       </div>
       <div className="viz-column-outer">
-        <strong>decoding samples</strong>
-        <div>count: {vizData?.decodingChunks?.length}</div>
+        <div className="viz-column-header">
+          <strong>decoding samples</strong>
+          <div>count: {vizData?.decodingChunks?.length}</div>
+        </div>
         <div className="viz-column-inner">
           {vizData?.decodingChunks?.map((timestamp) => {
             return (
@@ -56,8 +60,10 @@ export const Visualization = ({ player }: VisualizationProps) => {
         </div>
       </div>
       <div className="viz-column-outer">
-        <strong>converting frames</strong>
-        <div>count: {vizData?.convertingFrames?.length}</div>
+        <div className="viz-column-header">
+          <strong>converting frames</strong>
+          <div>count: {vizData?.convertingFrames?.length}</div>
+        </div>
         <div className="viz-column-inner">
           {vizData?.convertingFrames?.map((timestamp) => {
             return (
@@ -73,8 +79,10 @@ export const Visualization = ({ player }: VisualizationProps) => {
         </div>
       </div>
       <div className="viz-column-outer">
-        <strong>buffered frames</strong>
-        <div>count: {vizData?.bufferedFrames?.length}</div>
+        <div className="viz-column-header">
+          <strong>buffered frames</strong>
+          <div>count: {vizData?.bufferedFrames?.length}</div>
+        </div>
         <div className="viz-column-inner">
           {vizData?.bufferedFrames?.map((frame) => {
             return (
