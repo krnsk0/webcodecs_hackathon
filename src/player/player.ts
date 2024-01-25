@@ -172,8 +172,8 @@ export class Player {
     ]);
 
     await Promise.all([
-      this.audioPlayer.prebuffer(),
       this.videoPlayer.prebuffer(),
+      this.audioPlayer.prebuffer(),
     ]);
 
     // START PLAYBACK
