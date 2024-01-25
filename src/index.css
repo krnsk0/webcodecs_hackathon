@@ -5,7 +5,7 @@
 body {
   background-color: darkgrey;
   overflow-y: hidden;
-  --canvas-height: 310px;
+  --canvas-height: 340px;
 }
 .upper {
   display: flex;

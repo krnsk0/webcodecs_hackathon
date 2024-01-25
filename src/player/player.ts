@@ -264,9 +264,10 @@ export class Player {
       playbackFramerate: this.videoPlayer?.getPlaybackFramerate() || 0,
       conversionFramerate: this.videoPlayer?.getConversionFramerate() || 0,
       decodeFramerate: this.videoPlayer?.getDecodeFramerate() || 0,
-      bufferedTime: this.videoPlayer?.getBufferedTimeSec() || 0,
-      bufferedSizeBytes: this.videoPlayer?.getBufferedSizeBytes() || 0,
       droppedFrames: this.videoPlayer?.droppedFrameCount,
+      bufferedTime: this.videoPlayer?.getBufferedTimeSec() || 0,
+      videoBufferSizeBytes: this.videoPlayer?.getBufferSizeBytes() || 0,
+      audioBufferSourceSize: this.audioPlayer?.getBufferSizeBytes() || 0,
     };
   }
 }
