@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AdPod, Player } from './player/player';
 import { Visualization } from './Visualization';
 import { Metrics } from './Metrics';
+import { isWebCodecsSupported } from './isWebcodecsSupported';
 
 const mockAdResponse: AdPod[] = [
   // febreeze 480p 24fps AVC
@@ -24,6 +25,7 @@ const mockAdResponse: AdPod[] = [
 function App() {
   const canvasContainer = useRef<HTMLDivElement>(null);
   const [player, setPlayerState] = useState<Player>();
+  const [supported, setSupported] = useState<boolean>(false);
 
   const startEverything = () => {
     if (!canvasContainer.current) return;
@@ -41,6 +43,21 @@ function App() {
     document.addEventListener('keydown', listener);
     return () => document.removeEventListener('keydown', listener);
   });
+
+  useEffect(() => {
+    setSupported(isWebCodecsSupported());
+  }, [setSupported]);
+
+  if (!supported) {
+    return (
+      <div>
+        <div>WebCodecs is not supported in this browser.</div>
+        {!window.isSecureContext && (
+          <div>This may just be because you are not in a secure context</div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <>
