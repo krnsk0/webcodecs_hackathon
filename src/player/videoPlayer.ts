@@ -22,14 +22,14 @@ const workDelegator = new WorkDelegator(
 );
 
 export class VideoPlayer {
-  timestampsBeingDecoded: number[] = [];
-  timestampsBeingConverted: number[] = [];
+  public timestampsBeingDecoded: number[] = [];
+  public timestampsBeingConverted: number[] = [];
   private adPodIndex?: number;
   private encodedVideoChunks: EncodedVideoChunkWithDts[] = [];
   private lastDtsPushedToDecoder: number = -Infinity;
   private prebufferPromiseResolver?: () => void;
   private prebufferingComplete = false;
-  frameBuffer: BufferEntry[] = [];
+  public frameBuffer: BufferEntry[] = [];
   private highestBufferedCts: number = -Infinity;
   private frameDuration?: number;
   private hasDecoderFlushed = false;
@@ -42,6 +42,7 @@ export class VideoPlayer {
   private firstFrameConversionTimestamp?: number;
   private framesDecoded = 0;
   private firstFrameDecodedTimestamp?: number;
+  public droppedFrameCount = 0;
 
   public async setup({
     videoDecoderConfig,
@@ -283,6 +284,7 @@ export class VideoPlayer {
 
     if (!bufferEntry) {
       this.log(`dropped frame at time ${currentTimeMs}`);
+      this.droppedFrameCount += 1;
       return;
     }
 
