@@ -79,7 +79,7 @@ canvas {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 0.1em;
+  gap: 0.2em;
   background-color: white;
   overflow-y: scroll;
   max-height: 20em;
