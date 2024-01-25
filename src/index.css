@@ -1,22 +1,43 @@
+* {
+  box-sizing: border-box;
+  font-family: sans-serif;
+}
 body {
   background-color: darkgrey;
   overflow-y: hidden;
-  --canvas-height: 600px;
+  --canvas-height: 300px;
+  padding: 1em;
+}
+.upper {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+.data {
+  width: 20em;
+  height: var(--canvas-height);
+  background-color: white;
+  padding: 1em;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
 }
 #canvas-container {
-  width: 100%;
   display: flex;
   justify-content: center;
-  height: calc(var(--canvas-height) * (9 / 16));
+  height: var(--canvas-height);
+  width: calc(var(--canvas-height) * (16 / 9));
 }
 
 canvas {
-  width: var(--canvas-height);
-  height: calc(var(--canvas-height) * (9 / 16));
+  height: var(--canvas-height);
+  width: calc(var(--canvas-height) * (16 / 9));
   border: 1px solid black;
 }
 .controls {
-  margin-top: 0.5em;
+  margin-top: 1em;
   display: flex;
   justify-content: center;
   width: 100%;
@@ -40,11 +61,11 @@ canvas {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
+  padding-top: 1em;
+  padding-bottom: 1em;
 }
 .viz-column-inner {
-  padding: 0.5em;
+  padding: 1em;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -62,7 +83,7 @@ canvas {
   scrollbar-width: none;
 }
 .viz-frame {
-  font-size: 0.7em;
+  font-size: 1em;
   color: white;
   width: 3em;
 }

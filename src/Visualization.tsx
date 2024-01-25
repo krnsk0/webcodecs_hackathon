@@ -5,6 +5,8 @@ interface VisualizationProps {
   player?: Player;
 }
 
+const DATA_POLL_RATE = 50;
+
 export const Visualization = ({ player }: VisualizationProps) => {
   const [vizData, setVizData] =
     useState<ReturnType<Player['visualizationData']>>();
@@ -13,7 +15,7 @@ export const Visualization = ({ player }: VisualizationProps) => {
     const interval = setInterval(() => {
       if (!player) return;
       setVizData(player.visualizationData());
-    }, 200);
+    }, DATA_POLL_RATE);
     return () => clearInterval(interval);
   }, [setVizData, player]);
 
