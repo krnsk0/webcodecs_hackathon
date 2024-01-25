@@ -62,7 +62,8 @@ function App() {
   return (
     <>
       <div className="controls">
-        <button onClick={startEverything}>restart [spacebar]</button>
+        <button onClick={startEverything}>start [spacebar]</button>
+        <button onClick={() => window.location.reload()}>reload</button>
       </div>
       <div className="upper">
         <div ref={canvasContainer} id="canvas-container"></div>

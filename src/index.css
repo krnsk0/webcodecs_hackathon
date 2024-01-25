@@ -60,6 +60,7 @@ canvas {
 }
 button {
   font-size: 1.2em;
+  margin: 0 0.5em;
 }
 .viz-outer {
   width: 100%;
