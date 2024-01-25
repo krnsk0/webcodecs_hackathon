@@ -1,5 +1,5 @@
 body {
-  background-color: white;
+  background-color: darkgrey;
 }
 #canvas-container {
   width: 100%;
@@ -7,9 +7,9 @@ body {
   justify-content: center;
 }
 canvas {
-  border: 1px solid black;
   width: 400px;
   height: 225px;
+  border: 1px solid black;
 }
 .controls {
   margin-top: 0.5em;
@@ -24,7 +24,7 @@ canvas {
 }
 .viz-column-outer {
   width: 25%;
-  border: 1px solid black;
+  background-color: white;
   margin: 1em;
   display: flex;
   flex-direction: column;

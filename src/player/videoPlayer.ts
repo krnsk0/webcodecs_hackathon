@@ -79,22 +79,23 @@ export class VideoPlayer {
     currentTimeMs,
   }: {
     ctx?: RenderingContext;
-    canvas: HTMLCanvasElement;
+    canvas?: HTMLCanvasElement;
     currentTimeMs: number;
   }) {
     if (!ctx) throw new Error('no context provided to renderFrame');
+    if (!canvas) throw new Error('no canvas provided to renderFrame');
     this.log('renderFrame', currentTimeMs);
 
-    if (ctx instanceof ImageBitmapRenderingContext) {
-      ctx.transferFromImageBitmap(this.bufferedFrames[0].buffer);
-    } else if (ctx instanceof CanvasRenderingContext2D) {
-      ctx.drawImage(
-        this.bufferedFrames[0].buffer,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-    }
+    // if (ctx instanceof ImageBitmapRenderingContext) {
+    //   ctx.transferFromImageBitmap(this.bufferedFrames[0].buffer);
+    // } else if (ctx instanceof CanvasRenderingContext2D) {
+    //   ctx.drawImage(
+    //     this.bufferedFrames[0].buffer,
+    //     0,
+    //     0,
+    //     canvas.width,
+    //     canvas.height
+    //   );
+    // }
   }
 }
