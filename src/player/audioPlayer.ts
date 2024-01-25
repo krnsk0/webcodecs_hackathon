@@ -65,6 +65,10 @@ export class AudioPlayer {
     }
   }
 
+  public getCurrentTime(): number {
+    return this.audioContext.getOutputTimestamp().contextTime ?? 0;
+  }
+
   private handleAudioDecoderOutput(audioFrame: AudioData) {
     this.audioFrames.push(audioFrame);
   }
@@ -73,14 +77,12 @@ export class AudioPlayer {
     this.log('audio decoder error', error);
   }
 
-  isDonePlaying() {
-    if (!this.audioDecoder) throw new Error('no audio decoder set up yet');
-    // TODO implement this
-    return false;
-  }
-
   // aims to get us up to PREBUFFER_TARGET before starting playback
   prebuffer() {
     // nothing to do yet!
+  }
+
+  public stop(): Promise<void> {
+    return this.audioContext.close();
   }
 }
