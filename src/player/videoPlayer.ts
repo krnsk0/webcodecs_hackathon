@@ -1,15 +1,25 @@
 import {
   BUFFER_TARGET,
+  FRAME_CONVERSION_WORKERS,
+  FRAME_PURGE_THRESHOLD,
   OPTIMIZE_FOR_LATENCY_FLAG,
   PREBUFFER_TARGET,
   REQUEST_HARDWARE_ACCELERATION,
 } from './config';
 import { EncodedVideoChunkWithDts } from './demuxer';
+import { WorkDelegator } from './workDelegator';
 
-interface BufferEntry {
-  data: ImageBitmap;
+const NOISY_LOGS = false;
+
+export interface BufferEntry {
+  bitmap: ImageBitmap;
   timestamp: number;
 }
+
+const workDelegator = new WorkDelegator(
+  FRAME_CONVERSION_WORKERS,
+  new URL('./worker.ts', import.meta.url)
+);
 
 export class VideoPlayer {
   timestampsBeingDecoded: number[] = [];
@@ -35,6 +45,10 @@ export class VideoPlayer {
   }) {
     this.adPodIndex = adPodIndex;
     this.encodedVideoChunks = encodedVideoChunks;
+
+    workDelegator.onMessageFromAnyWorker((event) => {
+      this.frameBuffer.push(event.data as unknown as BufferEntry);
+    });
 
     const decoderConfig: VideoDecoderConfig = {
       ...videoDecoderConfig,
@@ -77,7 +91,7 @@ export class VideoPlayer {
   private async handleDecoderOutput(videoFrame: VideoFrame) {
     if (!this.decoder) return;
     const timestamp = videoFrame.timestamp;
-    this.log(`decoder output ${timestamp}`);
+    if (NOISY_LOGS) this.log(`decoder output ${timestamp}`);
 
     this.removeTimestampFromDecodingChunksList(timestamp);
 
@@ -91,12 +105,13 @@ export class VideoPlayer {
       this.frameDuration = videoFrame.duration ?? undefined;
     }
 
-    const imageBitmap = await createImageBitmap(videoFrame);
-
-    this.frameBuffer.push({
-      data: imageBitmap,
-      timestamp,
-    });
+    workDelegator.postMessageToNextWorker(
+      {
+        videoFrame,
+        timestamp,
+      },
+      [videoFrame]
+    );
   }
 
   isDonePlaying() {
@@ -108,16 +123,18 @@ export class VideoPlayer {
 
   private startDecodingUpToCts(targetCts: number) {
     if (!this.decoder) throw new Error('no decoder set up yet');
-    this.log(`attempting to push to decoder up to target cts ${targetCts}`);
+    if (NOISY_LOGS)
+      this.log(`attempting to push to decoder up to target cts ${targetCts}`);
     while (
       this.lastDtsPushedToDecoder < targetCts &&
       this.encodedVideoChunks.length > 0
     ) {
       const chunk = this.encodedVideoChunks.shift();
       if (!chunk) return;
-      this.log(
-        `pushing chunk w/ cts ${chunk.encodedVideoChunk.timestamp} and dts ${chunk.dts.toFixed(2)}`
-      );
+      if (NOISY_LOGS)
+        this.log(
+          `pushing chunk w/ cts ${chunk.encodedVideoChunk.timestamp} and dts ${chunk.dts.toFixed(2)}`
+        );
       this.lastDtsPushedToDecoder = chunk.dts;
       this.timestampsBeingDecoded.push(chunk.encodedVideoChunk.timestamp);
       this.decoder.decode(chunk.encodedVideoChunk);
@@ -128,7 +145,7 @@ export class VideoPlayer {
   async prebuffer() {
     let interval: ReturnType<typeof setTimeout>;
     const prebufferStartTime = Date.now();
-    const promise = new Promise<void>((resolve, reject) => {
+    const promise = new Promise<void>((resolve) => {
       this.prebufferPromiseResolver = resolve;
       this.log('prebuffering');
       this.startDecodingUpToCts(PREBUFFER_TARGET);
@@ -156,7 +173,7 @@ export class VideoPlayer {
     return promise;
   }
 
-  // purge frames more than 2 behind current time
+  // purge frames more than FRAME_PURGE_THRESHOLD behind current time
   // we don't purge right after paint because compositing in the browser
   // is threaded, and if we purge before compoisiting is complete we risk
   // seeing a black screen as the frame's memory has been released at draw time
@@ -164,11 +181,10 @@ export class VideoPlayer {
     if (this.frameDuration === undefined)
       throw new Error('no framerate; did prebuffering complete?');
     const frameBuffer = this.frameBuffer;
-    const cutoff = currentTimeMs - this.frameDuration * 2;
+    const cutoff = currentTimeMs - this.frameDuration * FRAME_PURGE_THRESHOLD;
     while (frameBuffer.length > 0 && frameBuffer[0].timestamp < cutoff) {
       const bufferEntry = frameBuffer.shift();
       if (!bufferEntry) return;
-      bufferEntry.data?.close();
     }
   }
 
@@ -197,22 +213,25 @@ export class VideoPlayer {
     if (!ctx) throw new Error('no context provided to renderFrame');
     if (!canvas) throw new Error('no canvas provided to renderFrame');
 
+    this.startDecodingUpToCts(currentTimeMs + BUFFER_TARGET);
+    this.purgeFramesBeforeTime(currentTimeMs);
     const bufferEntry = this.findFrameForTime(currentTimeMs);
-    this.log('renderFrame', bufferEntry);
-    // TODO - log a dropped frame
-    if (!bufferEntry) return;
+    if (NOISY_LOGS)
+      this.log(`attempting frame render at time ${currentTimeMs}`);
+
+    if (!bufferEntry) {
+      this.log(`dropped frame at time ${currentTimeMs}`);
+      return;
+    }
 
     try {
       if (ctx instanceof ImageBitmapRenderingContext) {
-        ctx.transferFromImageBitmap(bufferEntry.data);
+        ctx.transferFromImageBitmap(bufferEntry.bitmap);
       } else if (ctx instanceof CanvasRenderingContext2D) {
-        ctx.drawImage(bufferEntry.data, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bufferEntry.bitmap, 0, 0, canvas.width, canvas.height);
       }
     } catch (error: unknown) {
       this.log('error drawing to canvas', error);
-    } finally {
-      this.startDecodingUpToCts(currentTimeMs + BUFFER_TARGET);
-      this.purgeFramesBeforeTime(currentTimeMs);
     }
   }
 }
