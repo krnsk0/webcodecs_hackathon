@@ -26,6 +26,7 @@ export class VideoPlayer {
   public timestampsBeingConverted: number[] = [];
   private encodedVideoChunks: EncodedVideoChunkWithDts[] = [];
   private lastDtsPushedToDecoder: number = -Infinity;
+  private timestampOffset?: number;
   private prebufferPromiseResolver?: () => void;
   private prebufferingComplete = false;
   public frameBuffer: BufferEntry[] = [];
@@ -105,6 +106,10 @@ export class VideoPlayer {
     if (!this.videoDecoder) return;
     const timestamp = videoFrame.timestamp;
     if (NOISY_LOGS) this.log(`decoder output ${timestamp}`);
+
+    if (this.timestampOffset === undefined) {
+      this.timestampOffset = videoFrame.timestamp;
+    }
 
     this.removeTimestampFromDecodingChunksList(timestamp);
 
@@ -254,14 +259,26 @@ export class VideoPlayer {
 
   private findFrameForTime(currentTimeMs: number): BufferEntry | undefined {
     const frameDuration = this.frameDuration;
+    const timestampOffset = this.timestampOffset;
     if (frameDuration === undefined)
       throw new Error('no known frame duration; did prebuffering complete?');
+    if (timestampOffset === undefined)
+      throw new Error('no known timestamp offset; did prebuffering complete?');
+    const bufferEntry = this.frameBuffer.find((frame) => {
+      const frameStart = frame.timestamp - timestampOffset;
+      const frameEnd = frameStart + frameDuration;
 
-    const bufferEntry = this.frameBuffer.find(
-      (frame) =>
-        frame.timestamp <= currentTimeMs &&
-        frame.timestamp + frameDuration > currentTimeMs
-    );
+      return frameStart <= currentTimeMs && frameEnd > currentTimeMs;
+    });
+    if (!bufferEntry) {
+      console.log('DEBUG', {
+        currentTimeMs,
+        frameBuffer: this.frameBuffer.map(
+          (bufferEntry) => bufferEntry.timestamp
+        ),
+      });
+    }
+
     return bufferEntry;
   }
 
