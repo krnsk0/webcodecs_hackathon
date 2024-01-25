@@ -12,6 +12,11 @@ const mockAdResponse: AdPod[] = [
     video:
       'https://ark.tubi.video/939d5096-ce84-45da-8e2b-4ecbdf8cc6f8/854x480_1200k.mp4',
   },
+  // grubhub 480p 24fps AVC
+  {
+    video:
+      'https://ark.tubi.video/24877d7d-a7cc-4045-82d0-e6b0069b831e/854x480_1200k.mp4',
+  },
 ];
 
 function App() {
