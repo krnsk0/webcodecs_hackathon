@@ -266,19 +266,11 @@ export class VideoPlayer {
       throw new Error('no known timestamp offset; did prebuffering complete?');
     const bufferEntry = this.frameBuffer.find((frame) => {
       const frameStart = frame.timestamp - timestampOffset;
-      const frameEnd = frameStart + frameDuration;
-
-      return frameStart <= currentTimeMs && frameEnd > currentTimeMs;
+      const roundedCurrentTime = Math.floor(currentTimeMs);
+      // we don't have to care about the upper bound because frames
+      // are ordered
+      return frameStart <= roundedCurrentTime;
     });
-    if (!bufferEntry) {
-      console.log('DEBUG', {
-        currentTimeMs,
-        frameBuffer: this.frameBuffer.map(
-          (bufferEntry) => bufferEntry.timestamp
-        ),
-      });
-    }
-
     return bufferEntry;
   }
 
