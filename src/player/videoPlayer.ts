@@ -85,7 +85,7 @@ export class VideoPlayer {
     if (!ctx) throw new Error('no context provided to renderFrame');
     this.log('renderFrame', currentTimeMs);
 
-    if (ctx instanceof OffscreenCanvasRenderingContext2D) {
+    if (ctx instanceof ImageBitmapRenderingContext) {
       ctx.transferFromImageBitmap(this.bufferedFrames[0].buffer);
     } else if (ctx instanceof CanvasRenderingContext2D) {
       ctx.drawImage(

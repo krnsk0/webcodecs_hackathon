@@ -1,3 +1,6 @@
+body {
+  background-color: white;
+}
 #canvas-container {
   width: 100%;
   display: flex;
@@ -19,18 +22,29 @@ canvas {
   display: flex;
   justify-content: flex-start;
 }
-.viz-column {
+.viz-column-outer {
   width: 25%;
   border: 1px solid black;
   margin: 1em;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-top: 0.5em;
+}
+.viz-column-inner {
+  padding: 0.5em;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
+  gap: 0.1em;
+  background-color: white;
 }
 .viz-frame {
   font-size: 0.7em;
-  border: 1px solid grey;
+  background-color: darkblue;
+  color: white;
   width: 3em;
 }
