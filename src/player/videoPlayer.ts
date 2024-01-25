@@ -7,7 +7,7 @@ import {
 import { EncodedVideoChunkWithDts } from './demuxer';
 
 interface BufferEntry {
-  data: VideoFrame;
+  data: ImageBitmap;
   timestamp: number;
 }
 
@@ -91,8 +91,10 @@ export class VideoPlayer {
       this.frameDuration = videoFrame.duration ?? undefined;
     }
 
+    const imageBitmap = await createImageBitmap(videoFrame);
+
     this.frameBuffer.push({
-      data: videoFrame,
+      data: imageBitmap,
       timestamp,
     });
   }
@@ -195,21 +197,22 @@ export class VideoPlayer {
     if (!ctx) throw new Error('no context provided to renderFrame');
     if (!canvas) throw new Error('no canvas provided to renderFrame');
 
-    this.startDecodingUpToCts(currentTimeMs + BUFFER_TARGET);
-    this.purgeFramesBeforeTime(currentTimeMs);
-
     const bufferEntry = this.findFrameForTime(currentTimeMs);
     this.log('renderFrame', bufferEntry);
     // TODO - log a dropped frame
     if (!bufferEntry) return;
 
-    // for bitmap rendering later
-    // if (ctx instanceof ImageBitmapRenderingContext) {
-    //   ctx.transferFromImageBitmap(bufferEntry.data);
-    // }
-
-    if (ctx instanceof CanvasRenderingContext2D) {
-      ctx.drawImage(bufferEntry.data, 0, 0, canvas.width, canvas.height);
+    try {
+      if (ctx instanceof ImageBitmapRenderingContext) {
+        ctx.transferFromImageBitmap(bufferEntry.data);
+      } else if (ctx instanceof CanvasRenderingContext2D) {
+        ctx.drawImage(bufferEntry.data, 0, 0, canvas.width, canvas.height);
+      }
+    } catch (error: unknown) {
+      this.log('error drawing to canvas', error);
+    } finally {
+      this.startDecodingUpToCts(currentTimeMs + BUFFER_TARGET);
+      this.purgeFramesBeforeTime(currentTimeMs);
     }
   }
 }

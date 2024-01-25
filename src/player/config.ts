@@ -9,7 +9,7 @@ export const REQUEST_HARDWARE_ACCELERATION = true;
 export const OPTIMIZE_FOR_LATENCY_FLAG = true;
 
 // how many ms should we attempt to prebuffer?
-export const PREBUFFER_TARGET = 1000;
+export const PREBUFFER_TARGET = 500;
 
 // how far ahead of the playhead should we buffer?
 export const BUFFER_TARGET = 500;
