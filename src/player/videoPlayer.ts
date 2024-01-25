@@ -9,11 +9,12 @@ interface BufferEntry {
 }
 
 export class VideoPlayer {
-  private bufferedFrames: BufferEntry[] = [];
+  timestampsBeingDecoded: number[] = [];
+  timestampsBeingConverted: number[] = [];
+  bufferedFrames: BufferEntry[] = [];
   private adPodIndex?: number;
   private encodedVideoChunks: EncodedVideoChunk[] = [];
   private decoder?: VideoDecoder;
-  chunkTimestampsBeingDecoded: number[] = [];
 
   async setup({
     videoDecoderConfig,
@@ -60,9 +61,9 @@ export class VideoPlayer {
   }
 
   private removeTimestampFromDecodingChunksList(timestamp: number) {
-    const index = this.chunkTimestampsBeingDecoded.indexOf(timestamp);
+    const index = this.timestampsBeingDecoded.indexOf(timestamp);
     if (index === -1) throw new Error('timestamp not found in decoding list');
-    this.chunkTimestampsBeingDecoded.splice(index, 1);
+    this.timestampsBeingDecoded.splice(index, 1);
   }
 
   private async handleDecoderOutput(videoFrame: VideoFrame) {
@@ -77,22 +78,21 @@ export class VideoPlayer {
     );
   }
 
-  decodeNextChunk() {
+  pushToDecoder(targetTimestamp: number) {
     if (!this.decoder) throw new Error('no decoder set up yet');
     const chunk = this.encodedVideoChunks.shift();
+    console.log('chunk: ', chunk);
     if (!chunk) return;
-    this.chunkTimestampsBeingDecoded.push(chunk.timestamp);
+
+    this.timestampsBeingDecoded.push(chunk.timestamp);
     this.decoder.decode(chunk);
   }
 
+  // get at least first frame
   async prebuffer() {
     this.log('prebuffering');
-    this.decodeNextChunk();
-    this.decodeNextChunk();
-    this.decodeNextChunk();
-    this.decodeNextChunk();
-    this.decodeNextChunk();
-    this.decodeNextChunk();
+    const firstFrameTimestamp = this.encodedVideoChunks[0].timestamp;
+    this.pushToDecoder(firstFrameTimestamp);
   }
 
   renderFrame({
