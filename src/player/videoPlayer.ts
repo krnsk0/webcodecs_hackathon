@@ -36,7 +36,8 @@ export class VideoPlayer {
   frameBuffer: BufferEntry[] = [];
   private highestBufferedCts: number = -Infinity;
   private frameDuration?: number;
-  private hasDecoderFlushed: boolean = false;
+  private hasDecoderFlushed = false;
+  private hasDecoderFlushStarted = false;
 
   private audioDecoder?: AudioDecoder;
   private videoDecoder?: VideoDecoder;
@@ -45,7 +46,7 @@ export class VideoPlayer {
 
   private audioContext = new AudioContext({
     sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW,
-    latencyHint: 'playback'
+    latencyHint: 'playback',
   });
 
   private audioBuffer?: AudioBuffer;
@@ -55,7 +56,7 @@ export class VideoPlayer {
     videoDecoderConfig,
     adPodIndex,
     encodedVideoChunks,
-    encodedAudioChunks
+    encodedAudioChunks,
   }: {
     videoDecoderConfig: VideoDecoderConfig;
     adPodIndex: number;
@@ -98,17 +99,22 @@ export class VideoPlayer {
       this.audioBuffer = new AudioBuffer({
         numberOfChannels: ASSUMED_CHANNELS_FOR_NOW,
         length: this.audioFrames.length * ASSUMED_SAMPLE_RATE_FOR_NOW,
-        sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW
+        sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW,
       });
-      for (let channel = 0; channel < this.audioFrames[0].numberOfChannels; channel++) {
+      for (
+        let channel = 0;
+        channel < this.audioFrames[0].numberOfChannels;
+        channel++
+      ) {
         const options = {
           format: this.audioFrames[0].format,
-          planeIndex: channel
+          planeIndex: channel,
         };
         const destination = this.audioBuffer.getChannelData(channel);
         let offset = 0;
         for (const frame of this.audioFrames) {
-          const size = frame.allocationSize(options) / Float32Array.BYTES_PER_ELEMENT;
+          const size =
+            frame.allocationSize(options) / Float32Array.BYTES_PER_ELEMENT;
           frame.copyTo(destination.subarray(offset, offset + size), options);
           offset += size;
         }
@@ -117,7 +123,12 @@ export class VideoPlayer {
       this.audioSource.buffer = this.audioBuffer;
       this.audioSource.connect(this.audioContext.destination);
       this.audioSource.start();
-      this.log('successfully configured audio decoder and have ' + this.audioFrames.length + ' frames', config);
+      this.log(
+        'successfully configured audio decoder and have ' +
+          this.audioFrames.length +
+          ' frames',
+        config
+      );
     } catch (error: unknown) {
       this.log('error configuring audio decoder', error);
     }
@@ -201,7 +212,7 @@ export class VideoPlayer {
       this.log(`attempting to push to decoder up to target cts ${targetCts}`);
     if (this.encodedVideoChunks.length === 0) {
       this.log(`no more chunks to push; attempting flush`);
-      this.decoder.flush().then(() => {
+      this.videoDecoder.flush().then(() => {
         this.hasDecoderFlushed = true;
       });
     }
