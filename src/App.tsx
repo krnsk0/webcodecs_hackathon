@@ -23,14 +23,25 @@ function App() {
   const canvasContainer = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | undefined>(undefined);
 
-  useEffect(() => {
+  const startEverything = () => {
     if (!canvasContainer.current) return;
     const player = new Player({ container: canvasContainer.current });
     playerRef.current = player;
     player.playAdResponse(mockAdResponse);
+  };
+
+  useEffect(() => {
+    startEverything();
   }, []);
 
-  return <div ref={canvasContainer}></div>;
+  return (
+    <>
+      <div ref={canvasContainer} id="canvas-container"></div>
+      <div className="controls">
+        <button onClick={startEverything}>reset</button>
+      </div>
+    </>
+  );
 }
 
 export default App;

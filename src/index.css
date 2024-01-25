@@ -1,8 +1,14 @@
-#root {
+#canvas-container {
   width: 100%;
   display: flex;
   justify-content: center;
 }
-#canvas {
+canvas {
   border: 1px solid black;
+}
+.controls {
+  margin-top: 0.5em;
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
