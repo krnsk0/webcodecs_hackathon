@@ -17,13 +17,12 @@ export const Visualization = ({ player }: VisualizationProps) => {
     return () => clearInterval(interval);
   }, [setVizData, player]);
 
-  if (!player) return null;
   return (
     <div className="viz-outer">
       <div className="viz-column-outer">
         <div className="viz-column-header">
           <strong>demuxed samples</strong>
-          <div>count: {vizData?.demuxedChunks?.length}</div>
+          <div>count: {vizData?.demuxedChunks?.length ?? 0}</div>
         </div>
         <div className="viz-column-inner">
           {vizData?.demuxedChunks?.map((chunk) => {
@@ -43,7 +42,7 @@ export const Visualization = ({ player }: VisualizationProps) => {
       <div className="viz-column-outer">
         <div className="viz-column-header">
           <strong>decoding samples</strong>
-          <div>count: {vizData?.decodingChunks?.length}</div>
+          <div>count: {vizData?.decodingChunks?.length ?? 0}</div>
         </div>
         <div className="viz-column-inner">
           {vizData?.decodingChunks?.map((timestamp) => {
@@ -62,7 +61,7 @@ export const Visualization = ({ player }: VisualizationProps) => {
       <div className="viz-column-outer">
         <div className="viz-column-header">
           <strong>converting frames</strong>
-          <div>count: {vizData?.convertingFrames?.length}</div>
+          <div>count: {vizData?.convertingFrames?.length ?? 0}</div>
         </div>
         <div className="viz-column-inner">
           {vizData?.convertingFrames?.map((timestamp) => {
@@ -81,7 +80,7 @@ export const Visualization = ({ player }: VisualizationProps) => {
       <div className="viz-column-outer">
         <div className="viz-column-header">
           <strong>buffered frames</strong>
-          <div>count: {vizData?.bufferedFrames?.length}</div>
+          <div>count: {vizData?.bufferedFrames?.length ?? 0}</div>
         </div>
         <div className="viz-column-inner">
           {vizData?.bufferedFrames?.map((frame) => {
