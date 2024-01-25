@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Player } from './player/player';
+import { UI_UPDATE_INTERVAL } from './player/config';
 
 interface DataProps {
   player?: Player;
 }
-
-const DATA_POLL_RATE = 50;
 
 export const Metrics = ({ player }: DataProps) => {
   const [data, setData] = useState<ReturnType<Player['getMetrics']>>();
@@ -14,7 +13,7 @@ export const Metrics = ({ player }: DataProps) => {
     const interval = setInterval(() => {
       if (!player) return;
       setData(player.getMetrics());
-    }, DATA_POLL_RATE);
+    }, UI_UPDATE_INTERVAL);
     return () => clearInterval(interval);
   }, [setData, player]);
 

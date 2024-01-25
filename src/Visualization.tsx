@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Player } from './player/player';
+import { UI_UPDATE_INTERVAL } from './player/config';
 
 interface VisualizationProps {
   player?: Player;
 }
-
-const DATA_POLL_RATE = 50;
 
 export const Visualization = ({ player }: VisualizationProps) => {
   const [vizData, setVizData] =
@@ -15,7 +14,7 @@ export const Visualization = ({ player }: VisualizationProps) => {
     const interval = setInterval(() => {
       if (!player) return;
       setVizData(player.visualizationData());
-    }, DATA_POLL_RATE);
+    }, UI_UPDATE_INTERVAL);
     return () => clearInterval(interval);
   }, [setVizData, player]);
 
