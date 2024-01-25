@@ -56,6 +56,23 @@ export const Visualization = ({ player }: VisualizationProps) => {
         </div>
       </div>
       <div className="viz-column-outer">
+        <strong>converting frames</strong>
+        <div>count: {vizData?.convertingFrames?.length}</div>
+        <div className="viz-column-inner">
+          {vizData?.convertingFrames?.map((timestamp) => {
+            return (
+              <div
+                key={timestamp}
+                className="viz-frame"
+                style={{ backgroundColor: 'purple' }}
+              >
+                {timestamp}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="viz-column-outer">
         <strong>buffered frames</strong>
         <div>count: {vizData?.bufferedFrames?.length}</div>
         <div className="viz-column-inner">
@@ -71,9 +88,6 @@ export const Visualization = ({ player }: VisualizationProps) => {
             );
           })}
         </div>
-      </div>
-      <div className="viz-column-outer">
-        <div className="viz-column-inner"></div>
       </div>
     </div>
   );

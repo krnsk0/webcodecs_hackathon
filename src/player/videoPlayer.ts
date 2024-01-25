@@ -47,7 +47,8 @@ export class VideoPlayer {
     this.encodedVideoChunks = encodedVideoChunks;
 
     workDelegator.onMessageFromAnyWorker((event) => {
-      this.frameBuffer.push(event.data as unknown as BufferEntry);
+      // TODO: fix implicit any here
+      this.onFinishedConvertingFrame(event.data);
     });
 
     const decoderConfig: VideoDecoderConfig = {
@@ -88,6 +89,12 @@ export class VideoPlayer {
     this.timestampsBeingDecoded.splice(index, 1);
   }
 
+  private removeTimestampFromConvertingChunksList(timestamp: number) {
+    const index = this.timestampsBeingConverted.indexOf(timestamp);
+    if (index === -1) throw new Error('timestamp not found in converting list');
+    this.timestampsBeingConverted.splice(index, 1);
+  }
+
   private async handleDecoderOutput(videoFrame: VideoFrame) {
     if (!this.decoder) return;
     const timestamp = videoFrame.timestamp;
@@ -105,13 +112,7 @@ export class VideoPlayer {
       this.frameDuration = videoFrame.duration ?? undefined;
     }
 
-    workDelegator.postMessageToNextWorker(
-      {
-        videoFrame,
-        timestamp,
-      },
-      [videoFrame]
-    );
+    this.startConvertingFrame({ videoFrame, timestamp });
   }
 
   isDonePlaying() {
@@ -171,6 +172,39 @@ export class VideoPlayer {
       clearInterval(interval);
     });
     return promise;
+  }
+
+  private startConvertingFrame({
+    videoFrame,
+    timestamp,
+  }: {
+    videoFrame: VideoFrame;
+    timestamp: number;
+  }) {
+    if (NOISY_LOGS) this.log(`starting conversion of frame ${timestamp}`);
+    this.timestampsBeingConverted.push(timestamp);
+    workDelegator.postMessageToNextWorker(
+      {
+        videoFrame,
+        timestamp,
+      },
+      [videoFrame]
+    );
+  }
+
+  private onFinishedConvertingFrame({
+    timestamp,
+    bitmap,
+  }: {
+    timestamp: number;
+    bitmap: ImageBitmap;
+  }) {
+    if (NOISY_LOGS) this.log(`finished conversion of frame ${timestamp}`);
+    this.removeTimestampFromConvertingChunksList(timestamp);
+    this.frameBuffer.push({
+      bitmap,
+      timestamp,
+    });
   }
 
   // purge frames more than FRAME_PURGE_THRESHOLD behind current time

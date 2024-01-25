@@ -213,6 +213,7 @@ export class Player {
     return {
       demuxedChunks: this.adEncodedVideoChunks[this.adPodIndex],
       decodingChunks: this.videoPlayer?.timestampsBeingDecoded,
+      convertingFrames: this.videoPlayer?.timestampsBeingConverted,
       bufferedFrames: this.videoPlayer?.frameBuffer,
     };
   }
