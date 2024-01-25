@@ -11,7 +11,7 @@ export interface AdPod {
 }
 
 export class Player {
-  private canvasEl?: HTMLCanvasElement;
+  private canvas?: HTMLCanvasElement;
   private ctx?: RenderingContext;
   private adResponse: AdPod[] = [];
   private mp4BlobPromises: Promise<Blob>[] = [];
@@ -24,12 +24,13 @@ export class Player {
   private adEncodedVideoChunks: EncodedVideoChunk[][] = [];
   private adPlaybackPromises: Promise<void>[] = [];
   private adPodIndex = -1;
+  private currentAdStartTime?: number;
 
   constructor(private options: PlayerOptions) {}
 
   reset() {
     this.options.container.innerHTML = '';
-    this.canvasEl = undefined;
+    this.canvas = undefined;
     this.ctx = undefined;
     this.adResponse = [];
     this.mp4BlobPromises = [];
@@ -41,6 +42,7 @@ export class Player {
     this.adEncodedVideoChunks = [];
     this.adPlaybackPromises = [];
     this.adPodIndex = 0;
+    this.currentAdStartTime = undefined;
   }
 
   private log(...args: unknown[]) {
@@ -49,12 +51,10 @@ export class Player {
 
   private createCanvasElement() {
     const canvasEl = document.createElement('canvas');
-    canvasEl.style.width = '100%';
-    canvasEl.style.height = '100%';
     canvasEl.width = 1600;
     canvasEl.height = 900;
     this.options.container.appendChild(canvasEl);
-    this.canvasEl = canvasEl;
+    this.canvas = canvasEl;
     const ctx = canvasEl.getContext(
       USE_BITMAP_RENDERER_CANVAS ? 'bitmaprenderer' : '2d'
     );
@@ -155,6 +155,31 @@ export class Player {
       videoDecoderConfig,
       adPodIndex,
       encodedVideoChunks,
+    });
+
+    await this.videoPlayer.prebuffer();
+
+    // START PLAYBACK
+    this.currentAdStartTime = Date.now();
+    return new Promise((resolve) => {
+      const animationFrameCallback = () => {
+        if (!this.currentAdStartTime)
+          throw new Error('no current ad start time');
+        if (!this.videoPlayer) return;
+        const currentTimeMs = Date.now() - this.currentAdStartTime;
+
+        this.videoPlayer.renderFrame({
+          ctx: this.ctx,
+          canvas: this.canvas,
+          currentTimeMs,
+        });
+
+        if (this.videoPlayer.isDonePlaying()) {
+          this.log(`done playing ad ${adPodIndex}`);
+          resolve();
+        } else requestAnimationFrame(animationFrameCallback);
+      };
+      requestAnimationFrame(animationFrameCallback);
     });
   }
 

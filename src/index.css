@@ -5,6 +5,8 @@
 }
 canvas {
   border: 1px solid black;
+  width: 400px;
+  height: 225px;
 }
 .controls {
   margin-top: 0.5em;

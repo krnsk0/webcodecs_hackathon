@@ -9,7 +9,7 @@ interface BufferEntry {
 }
 
 export class VideoPlayer {
-  private decodedFrames: BufferEntry[] = [];
+  private bufferedFrames: BufferEntry[] = [];
   private adPodIndex?: number;
   private encodedVideoChunks: EncodedVideoChunk[] = [];
   private decoder?: VideoDecoder;
@@ -60,5 +60,41 @@ export class VideoPlayer {
 
   private async handleDecoderOutput(videoFrame: VideoFrame) {
     this.log('decoder output', videoFrame);
+  }
+
+  isDonePlaying() {
+    if (!this.decoder) throw new Error('no decoder set up yet');
+    return (
+      this.encodedVideoChunks.length === 0 && this.bufferedFrames.length === 0
+    );
+  }
+
+  async prebuffer() {
+    this.log('prebuffering');
+  }
+
+  renderFrame({
+    ctx,
+    canvas,
+    currentTimeMs,
+  }: {
+    ctx?: RenderingContext;
+    canvas: HTMLCanvasElement;
+    currentTimeMs: number;
+  }) {
+    if (!ctx) throw new Error('no context provided to renderFrame');
+    this.log('renderFrame', currentTimeMs);
+
+    if (ctx instanceof OffscreenCanvasRenderingContext2D) {
+      ctx.transferFromImageBitmap(this.bufferedFrames[0].buffer);
+    } else if (ctx instanceof CanvasRenderingContext2D) {
+      ctx.drawImage(
+        this.bufferedFrames[0].buffer,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+    }
   }
 }
