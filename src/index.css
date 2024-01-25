@@ -21,6 +21,7 @@ canvas {
   width: 100%;
   display: flex;
   justify-content: flex-start;
+  align-items: flex-start;
 }
 .viz-column-outer {
   width: 25%;
@@ -31,6 +32,7 @@ canvas {
   justify-content: center;
   align-items: center;
   padding-top: 0.5em;
+  padding-bottom: 0.5em;
 }
 .viz-column-inner {
   padding: 0.5em;

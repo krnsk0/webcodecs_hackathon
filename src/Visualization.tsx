@@ -34,7 +34,18 @@ export const Visualization = ({ player }: VisualizationProps) => {
         </div>
       </div>
       <div className="viz-column-outer">
-        <div className="viz-column-inner"></div>
+        <strong>decoding samples</strong>
+        <div>count: {vizData?.decodingChunks?.length}</div>
+        <div className="viz-column-inner">
+          {' '}
+          {vizData?.decodingChunks?.map((timestamp) => {
+            return (
+              <div key={timestamp} className="viz-frame">
+                {timestamp}
+              </div>
+            );
+          })}
+        </div>
       </div>
       <div className="viz-column-outer">
         <div className="viz-column-inner"></div>

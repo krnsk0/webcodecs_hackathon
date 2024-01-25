@@ -13,6 +13,7 @@ export class VideoPlayer {
   private adPodIndex?: number;
   private encodedVideoChunks: EncodedVideoChunk[] = [];
   private decoder?: VideoDecoder;
+  chunkTimestampsBeingDecoded: number[] = [];
 
   async setup({
     videoDecoderConfig,
@@ -58,8 +59,15 @@ export class VideoPlayer {
     this.log('decoder error', error);
   }
 
+  private removeTimestampFromDecodingChunksList(timestamp: number) {
+    const index = this.chunkTimestampsBeingDecoded.indexOf(timestamp);
+    if (index === -1) throw new Error('timestamp not found in decoding list');
+    this.chunkTimestampsBeingDecoded.splice(index, 1);
+  }
+
   private async handleDecoderOutput(videoFrame: VideoFrame) {
     this.log('decoder output', videoFrame);
+    this.removeTimestampFromDecodingChunksList(videoFrame.timestamp);
   }
 
   isDonePlaying() {
@@ -69,8 +77,22 @@ export class VideoPlayer {
     );
   }
 
+  decodeNextChunk() {
+    if (!this.decoder) throw new Error('no decoder set up yet');
+    const chunk = this.encodedVideoChunks.shift();
+    if (!chunk) return;
+    this.chunkTimestampsBeingDecoded.push(chunk.timestamp);
+    this.decoder.decode(chunk);
+  }
+
   async prebuffer() {
     this.log('prebuffering');
+    this.decodeNextChunk();
+    this.decodeNextChunk();
+    this.decodeNextChunk();
+    this.decodeNextChunk();
+    this.decodeNextChunk();
+    this.decodeNextChunk();
   }
 
   renderFrame({
@@ -84,7 +106,7 @@ export class VideoPlayer {
   }) {
     if (!ctx) throw new Error('no context provided to renderFrame');
     if (!canvas) throw new Error('no canvas provided to renderFrame');
-    this.log('renderFrame', currentTimeMs);
+    // this.log('renderFrame', currentTimeMs);
 
     // if (ctx instanceof ImageBitmapRenderingContext) {
     //   ctx.transferFromImageBitmap(this.bufferedFrames[0].buffer);

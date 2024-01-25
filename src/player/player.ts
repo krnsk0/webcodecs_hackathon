@@ -212,6 +212,7 @@ export class Player {
   visualizationData() {
     return {
       demuxedChunks: this.adEncodedVideoChunks[this.adPodIndex],
+      decodingChunks: this.videoPlayer?.chunkTimestampsBeingDecoded,
     };
   }
 }
