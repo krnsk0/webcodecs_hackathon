@@ -145,8 +145,13 @@ export class VideoPlayer {
     if (NOISY_LOGS)
       this.log(`attempting to push to decoder up to target cts ${targetCts}`);
     if (this.encodedVideoChunks.length === 0 && !this.hasDecoderFlushStarted) {
-      this.log(`no more chunks to push; attempting flush`);
+      this.hasDecoderFlushStarted = true;
+      const decoderFlushStartTime = Date.now();
+      this.log(`no more chunks to push; flushing decoder`);
       this.videoDecoder.flush().then(() => {
+        this.log(
+          `decoder flush complete; took ${Date.now() - decoderFlushStartTime}ms`
+        );
         this.hasDecoderFlushed = true;
       });
     }
