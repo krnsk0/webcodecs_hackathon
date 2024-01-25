@@ -22,25 +22,32 @@ const workDelegator = new WorkDelegator(
 );
 
 export class VideoPlayer {
-  timestampsBeingDecoded: number[] = [];
-  timestampsBeingConverted: number[] = [];
+  public timestampsBeingDecoded: number[] = [];
+  public timestampsBeingConverted: number[] = [];
   private adPodIndex?: number;
   private encodedVideoChunks: EncodedVideoChunkWithDts[] = [];
   private lastDtsPushedToDecoder: number = -Infinity;
   private prebufferPromiseResolver?: () => void;
   private prebufferingComplete = false;
-  frameBuffer: BufferEntry[] = [];
+  public frameBuffer: BufferEntry[] = [];
   private highestBufferedCts: number = -Infinity;
   private frameDuration?: number;
   private hasDecoderFlushed = false;
   private hasDecoderFlushStarted = false;
-
   private videoDecoder?: VideoDecoder;
+  private lastDrawnFrameTimstamp?: number;
+  private framesSuccessullyRendered = 0;
+  private firstFrameDisplayTimestamp?: number;
+  private framesConverted = 0;
+  private firstFrameConversionTimestamp?: number;
+  private framesDecoded = 0;
+  private firstFrameDecodedTimestamp?: number;
+  public droppedFrameCount = 0;
 
-  async setup({
+  public async setup({
     videoDecoderConfig,
     adPodIndex,
-    encodedVideoChunks
+    encodedVideoChunks,
   }: {
     videoDecoderConfig: VideoDecoderConfig;
     adPodIndex: number;
@@ -115,6 +122,12 @@ export class VideoPlayer {
       this.frameDuration = videoFrame.duration ?? undefined;
     }
 
+    if (this.firstFrameDecodedTimestamp === undefined) {
+      this.firstFrameDecodedTimestamp = Date.now();
+    }
+
+    this.framesDecoded += 1;
+
     this.startConvertingFrame({ videoFrame, timestamp });
   }
 
@@ -155,7 +168,7 @@ export class VideoPlayer {
   }
 
   // aims to get us up to PREBUFFER_TARGET before starting playback
-  async prebuffer() {
+  public async prebuffer() {
     let interval: ReturnType<typeof setTimeout>;
     const prebufferStartTime = Date.now();
     const promise = new Promise<void>((resolve) => {
@@ -213,6 +226,10 @@ export class VideoPlayer {
   }) {
     if (NOISY_LOGS) this.log(`finished conversion of frame ${timestamp}`);
     this.removeTimestampFromConvertingChunksList(timestamp);
+    if (this.firstFrameConversionTimestamp === undefined) {
+      this.firstFrameConversionTimestamp = Date.now();
+    }
+    this.framesConverted += 1;
     this.frameBuffer.push({
       bitmap,
       timestamp,
@@ -247,7 +264,7 @@ export class VideoPlayer {
     return bufferEntry;
   }
 
-  renderFrame({
+  public renderFrame({
     ctx,
     canvas,
     currentTimeMs,
@@ -267,8 +284,12 @@ export class VideoPlayer {
 
     if (!bufferEntry) {
       this.log(`dropped frame at time ${currentTimeMs}`);
+      this.droppedFrameCount += 1;
       return;
     }
+
+    // don't draw the same frame twice
+    if (bufferEntry.timestamp === this.lastDrawnFrameTimstamp) return;
 
     try {
       if (ctx instanceof ImageBitmapRenderingContext) {
@@ -278,6 +299,60 @@ export class VideoPlayer {
       }
     } catch (error: unknown) {
       this.log('error drawing to canvas', error);
+    } finally {
+      if (this.firstFrameDisplayTimestamp === undefined) {
+        this.firstFrameDisplayTimestamp = Date.now();
+      }
+      this.framesSuccessullyRendered += 1;
+      this.lastDrawnFrameTimstamp = bufferEntry.timestamp;
     }
+  }
+
+  public getSourceFramerate(): number {
+    if (this.isDonePlaying()) return 0;
+    if (this.frameDuration === undefined) return 0;
+    return 1000 / this.frameDuration;
+  }
+
+  public getPlaybackFramerate(): number {
+    if (this.isDonePlaying()) return 0;
+    if (this.firstFrameDisplayTimestamp === undefined) return 0;
+    return (
+      this.framesSuccessullyRendered /
+      ((Date.now() - this.firstFrameDisplayTimestamp) / 1000)
+    );
+  }
+
+  public getConversionFramerate(): number {
+    if (this.isDonePlaying()) return 0;
+    if (this.firstFrameConversionTimestamp === undefined) return 0;
+    return (
+      this.framesConverted /
+      ((Date.now() - this.firstFrameConversionTimestamp) / 1000)
+    );
+  }
+
+  public getDecodeFramerate(): number {
+    if (this.isDonePlaying()) return 0;
+    if (this.firstFrameDecodedTimestamp === undefined) return 0;
+    return (
+      this.framesDecoded /
+      ((Date.now() - this.firstFrameDecodedTimestamp) / 1000)
+    );
+  }
+
+  public getBufferedTimeSec(): number {
+    if (this.isDonePlaying()) return 0;
+    if (this.highestBufferedCts === -Infinity) return 0;
+    if (this.lastDrawnFrameTimstamp === undefined) return 0;
+    return (this.highestBufferedCts - this.lastDrawnFrameTimstamp) / 1_000;
+  }
+
+  public getBufferedSizeBytes(): number {
+    if (this.isDonePlaying()) return 0;
+    return this.encodedVideoChunks.reduce(
+      (acc, chunk) => acc + chunk.encodedVideoChunk.byteLength,
+      0
+    );
   }
 }

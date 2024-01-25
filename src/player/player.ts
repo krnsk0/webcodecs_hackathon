@@ -27,6 +27,7 @@ export class Player {
   private adPlaybackPromises: Promise<void>[] = [];
   private adPodIndex = -1;
   private currentAdStartTime?: number;
+  private animationFrameCallbackCount = 0;
 
   constructor(private options: PlayerOptions) {}
 
@@ -162,28 +163,33 @@ export class Player {
     await Promise.all([
       this.audioPlayer.setup({
         audioDecoderConfig,
-        encodedAudioChunks
+        encodedAudioChunks,
       }),
       this.videoPlayer.setup({
         videoDecoderConfig,
         adPodIndex,
-        encodedVideoChunks
-      })
+        encodedVideoChunks,
+      }),
     ]);
 
     await Promise.all([
       this.audioPlayer.prebuffer(),
-      this.videoPlayer.prebuffer()
+      this.videoPlayer.prebuffer(),
     ]);
 
     // START PLAYBACK
     this.currentAdStartTime = Date.now();
+    this.animationFrameCallbackCount = 0;
     return new Promise((resolve) => {
       const animationFrameCallback = async () => {
         if (!this.currentAdStartTime)
           throw new Error('no current ad start time');
         if (!this.videoPlayer) return;
-        const currentTimeMs = this.audioPlayer === undefined ? Date.now() - this.currentAdStartTime : 1_000 * this.audioPlayer.getCurrentTime();
+        this.animationFrameCallbackCount += 1;
+        const currentTimeMs =
+          this.audioPlayer === undefined
+            ? Date.now() - this.currentAdStartTime
+            : 1_000 * this.audioPlayer.getCurrentTime();
 
         this.videoPlayer.renderFrame({
           ctx: this.ctx,
@@ -219,7 +225,7 @@ export class Player {
     }
   }
 
-  async playAdResponse(adResponse: AdPod[]) {
+  public async playAdResponse(adResponse: AdPod[]) {
     this.reset();
     this.adResponse = adResponse;
     this.createCanvasElement();
@@ -228,12 +234,39 @@ export class Player {
     this.startPlayingAds();
   }
 
-  visualizationData() {
+  public visualizationData() {
     return {
       demuxedChunks: this.adEncodedVideoChunks[this.adPodIndex],
       decodingChunks: this.videoPlayer?.timestampsBeingDecoded,
       convertingFrames: this.videoPlayer?.timestampsBeingConverted,
       bufferedFrames: this.videoPlayer?.frameBuffer,
+    };
+  }
+
+  private getAnimationFramerate() {
+    if (!this.currentAdStartTime) return 0;
+    return (
+      (this.animationFrameCallbackCount /
+        (Date.now() - this.currentAdStartTime)) *
+      1000
+    );
+  }
+
+  public getMetrics() {
+    return {
+      url: this.adResponse[this.adPodIndex]?.video || '',
+      sourceWidth: this.adVideoDecoderConfigs[this.adPodIndex]?.codedWidth || 0,
+      sourceHeight:
+        this.adVideoDecoderConfigs[this.adPodIndex]?.codedHeight || 0,
+      sourceFramerate: this.videoPlayer?.getSourceFramerate() || 0,
+      sourceCodec: this.adVideoDecoderConfigs[this.adPodIndex]?.codec || '',
+      animationFramerate: this.getAnimationFramerate(),
+      playbackFramerate: this.videoPlayer?.getPlaybackFramerate() || 0,
+      conversionFramerate: this.videoPlayer?.getConversionFramerate() || 0,
+      decodeFramerate: this.videoPlayer?.getDecodeFramerate() || 0,
+      bufferedTime: this.videoPlayer?.getBufferedTimeSec() || 0,
+      bufferedSizeBytes: this.videoPlayer?.getBufferedSizeBytes() || 0,
+      droppedFrames: this.videoPlayer?.droppedFrameCount,
     };
   }
 }
