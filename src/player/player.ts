@@ -147,6 +147,8 @@ export class Player {
     videoDecoderConfig: VideoDecoderConfig;
     adPodIndex: number;
   }): Promise<void> {
+    const encodedAudioChunks = this.adEncodedAudioChunks[adPodIndex];
+    if (!encodedAudioChunks) throw new Error('no audio chunks ready');
     const encodedVideoChunks = this.adEncodedVideoChunks[adPodIndex];
     if (!encodedVideoChunks) throw new Error('no video chunks ready');
     this.log(`starting ad ${adPodIndex}`);
@@ -155,6 +157,7 @@ export class Player {
       videoDecoderConfig,
       adPodIndex,
       encodedVideoChunks,
+      encodedAudioChunks
     });
 
     await this.videoPlayer.prebuffer();
