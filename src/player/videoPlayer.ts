@@ -24,7 +24,6 @@ const workDelegator = new WorkDelegator(
 export class VideoPlayer {
   public timestampsBeingDecoded: number[] = [];
   public timestampsBeingConverted: number[] = [];
-  private adPodIndex?: number;
   private encodedVideoChunks: EncodedVideoChunkWithDts[] = [];
   private lastDtsPushedToDecoder: number = -Infinity;
   private prebufferPromiseResolver?: () => void;
@@ -46,14 +45,11 @@ export class VideoPlayer {
 
   public async setup({
     videoDecoderConfig,
-    adPodIndex,
     encodedVideoChunks,
   }: {
     videoDecoderConfig: VideoDecoderConfig;
-    adPodIndex: number;
     encodedVideoChunks: EncodedVideoChunkWithDts[];
   }) {
-    this.adPodIndex = adPodIndex;
     this.encodedVideoChunks = encodedVideoChunks;
 
     workDelegator.onMessageFromAnyWorker((event) => {
@@ -86,7 +82,7 @@ export class VideoPlayer {
   }
 
   private log(...args: unknown[]) {
-    console.log(`[VideoPlayer][ad ${this.adPodIndex}]`, ...args);
+    console.log(`[VideoPlayer]`, ...args);
   }
 
   private handleDecoderErrors(error: unknown) {

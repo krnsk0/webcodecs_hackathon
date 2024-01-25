@@ -167,7 +167,6 @@ export class Player {
       }),
       this.videoPlayer.setup({
         videoDecoderConfig,
-        adPodIndex,
         encodedVideoChunks,
       }),
     ]);
