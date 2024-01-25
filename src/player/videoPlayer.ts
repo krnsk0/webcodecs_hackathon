@@ -187,11 +187,12 @@ export class VideoPlayer {
       // what we want
       interval = setInterval(() => {
         this.log('prebuffer did not complete; pushing more frames');
-        if (this.frameDuration === undefined) throw new Error('no framerate');
+        let advanceBy = 33.3333;
+        if (this.frameDuration !== undefined) {
+          advanceBy = this.frameDuration;
+        }
         if (!this.prebufferingComplete) {
-          this.startDecodingUpToCts(
-            this.lastDtsPushedToDecoder + this.frameDuration
-          );
+          this.startDecodingUpToCts(this.lastDtsPushedToDecoder + advanceBy);
         }
       }, 50);
     });
