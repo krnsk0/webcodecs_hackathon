@@ -37,7 +37,6 @@ export class VideoPlayer {
   private highestBufferedCts: number = -Infinity;
   private frameDuration?: number;
   private hasDecoderFlushed = false;
-  private hasDecoderFlushStarted = false;
 
   private audioDecoder?: AudioDecoder;
   private videoDecoder?: VideoDecoder;
