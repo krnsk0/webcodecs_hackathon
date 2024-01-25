@@ -21,10 +21,6 @@ const workDelegator = new WorkDelegator(
   new URL('./worker.js', import.meta.url)
 );
 
-const ASSUMED_CHANNELS_FOR_NOW = 2;
-const ASSUMED_SAMPLE_RATE_FOR_NOW = 48_000;
-const ASSUMED_CODEC_FOR_NOW = 'mp4a.40.2';
-
 export class VideoPlayer {
   timestampsBeingDecoded: number[] = [];
   timestampsBeingConverted: number[] = [];
@@ -39,29 +35,16 @@ export class VideoPlayer {
   private hasDecoderFlushed = false;
   private hasDecoderFlushStarted = false;
 
-  private audioDecoder?: AudioDecoder;
   private videoDecoder?: VideoDecoder;
-
-  private audioFrames: AudioData[] = [];
-
-  private audioContext = new AudioContext({
-    sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW,
-    latencyHint: 'playback',
-  });
-
-  private audioBuffer?: AudioBuffer;
-  private audioSource?: AudioBufferSourceNode;
 
   async setup({
     videoDecoderConfig,
     adPodIndex,
-    encodedVideoChunks,
-    encodedAudioChunks,
+    encodedVideoChunks
   }: {
     videoDecoderConfig: VideoDecoderConfig;
     adPodIndex: number;
     encodedVideoChunks: EncodedVideoChunkWithDts[];
-    encodedAudioChunks: EncodedAudioChunk[];
   }) {
     this.adPodIndex = adPodIndex;
     this.encodedVideoChunks = encodedVideoChunks;
@@ -78,60 +61,6 @@ export class VideoPlayer {
         : 'no-preference',
       optimizeForLatency: OPTIMIZE_FOR_LATENCY_FLAG,
     };
-
-    try {
-      const { supported, config } = await AudioDecoder.isConfigSupported({
-        codec: ASSUMED_CODEC_FOR_NOW,
-        sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW,
-        numberOfChannels: ASSUMED_CHANNELS_FOR_NOW,
-      });
-      if (!supported) throw new Error('audio config not supported');
-      this.audioDecoder = new AudioDecoder({
-        output: this.handleAudioDecoderOutput.bind(this),
-        error: this.handleAudioDecoderErrors.bind(this),
-      });
-      this.audioDecoder.configure(config);
-
-      for (let i = 0; i < encodedAudioChunks.length; i++) {
-        this.audioDecoder.decode(encodedAudioChunks[i]);
-      }
-      await this.audioDecoder.flush();
-      this.audioBuffer = new AudioBuffer({
-        numberOfChannels: ASSUMED_CHANNELS_FOR_NOW,
-        length: this.audioFrames.length * ASSUMED_SAMPLE_RATE_FOR_NOW,
-        sampleRate: ASSUMED_SAMPLE_RATE_FOR_NOW,
-      });
-      for (
-        let channel = 0;
-        channel < this.audioFrames[0].numberOfChannels;
-        channel++
-      ) {
-        const options = {
-          format: this.audioFrames[0].format,
-          planeIndex: channel,
-        };
-        const destination = this.audioBuffer.getChannelData(channel);
-        let offset = 0;
-        for (const frame of this.audioFrames) {
-          const size =
-            frame.allocationSize(options) / Float32Array.BYTES_PER_ELEMENT;
-          frame.copyTo(destination.subarray(offset, offset + size), options);
-          offset += size;
-        }
-      }
-      this.audioSource = this.audioContext.createBufferSource();
-      this.audioSource.buffer = this.audioBuffer;
-      this.audioSource.connect(this.audioContext.destination);
-      this.audioSource.start();
-      this.log(
-        'successfully configured audio decoder and have ' +
-          this.audioFrames.length +
-          ' frames',
-        config
-      );
-    } catch (error: unknown) {
-      this.log('error configuring audio decoder', error);
-    }
 
     try {
       const { supported, config } =
@@ -167,14 +96,6 @@ export class VideoPlayer {
     const index = this.timestampsBeingConverted.indexOf(timestamp);
     if (index === -1) throw new Error('timestamp not found in converting list');
     this.timestampsBeingConverted.splice(index, 1);
-  }
-
-  private handleAudioDecoderOutput(audioFrame: AudioData) {
-    this.audioFrames.push(audioFrame);
-  }
-
-  private handleAudioDecoderErrors(error: unknown) {
-    this.log('audio decoder error', error);
   }
 
   private async handleDecoderOutput(videoFrame: VideoFrame) {

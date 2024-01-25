@@ -1,5 +1,6 @@
 import { USE_BITMAP_RENDERER_CANVAS } from './config';
 import { Demuxer, EncodedVideoChunkWithDts } from './demuxer';
+import { AudioPlayer } from './audioPlayer';
 import { VideoPlayer } from './videoPlayer';
 
 interface PlayerOptions {
@@ -16,6 +17,7 @@ export class Player {
   private adResponse: AdPod[] = [];
   private mp4BlobPromises: Promise<Blob>[] = [];
   private demuxer: Demuxer = new Demuxer();
+  private audioPlayer?: AudioPlayer;
   private videoPlayer?: VideoPlayer;
   private demuxReadyPromises: Promise<void>[] = [];
   private adVideoDecoderConfigs: VideoDecoderConfig[] = [];
@@ -141,9 +143,11 @@ export class Player {
   }
 
   private async startAd({
+    audioDecoderConfig,
     videoDecoderConfig,
     adPodIndex,
   }: {
+    audioDecoderConfig: AudioDecoderConfig;
     videoDecoderConfig: VideoDecoderConfig;
     adPodIndex: number;
   }): Promise<void> {
@@ -152,15 +156,25 @@ export class Player {
     const encodedVideoChunks = this.adEncodedVideoChunks[adPodIndex];
     if (!encodedVideoChunks) throw new Error('no video chunks ready');
     this.log(`starting ad ${adPodIndex}`);
+    this.audioPlayer = new AudioPlayer();
     this.videoPlayer = new VideoPlayer();
-    await this.videoPlayer.setup({
-      videoDecoderConfig,
-      adPodIndex,
-      encodedVideoChunks,
-      encodedAudioChunks
-    });
 
-    await this.videoPlayer.prebuffer();
+    await Promise.all([
+      this.audioPlayer.setup({
+        audioDecoderConfig,
+        encodedAudioChunks
+      }),
+      this.videoPlayer.setup({
+        videoDecoderConfig,
+        adPodIndex,
+        encodedVideoChunks
+      })
+    ]);
+
+    await Promise.all([
+      this.audioPlayer.prebuffer(),
+      this.videoPlayer.prebuffer()
+    ]);
 
     // START PLAYBACK
     this.currentAdStartTime = Date.now();
@@ -194,6 +208,7 @@ export class Player {
       // kick off playback
       this.adPodIndex = i;
       const adPlaybackPromise = this.startAd({
+        audioDecoderConfig: this.adAudioDecoderConfigs[i],
         videoDecoderConfig: this.adVideoDecoderConfigs[i],
         adPodIndex: i,
       });
