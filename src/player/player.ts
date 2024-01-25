@@ -267,7 +267,7 @@ export class Player {
       droppedFrames: this.videoPlayer?.droppedFrameCount,
       bufferedTime: this.videoPlayer?.getBufferedTimeSec() || 0,
       videoBufferSizeBytes: this.videoPlayer?.getBufferSizeBytes() || 0,
-      audioBufferSourceSize: this.audioPlayer?.getBufferSizeBytes() || 0,
+      audioBufferSizeBytes: this.audioPlayer?.getBufferSizeBytes() || 0,
     };
   }
 }
