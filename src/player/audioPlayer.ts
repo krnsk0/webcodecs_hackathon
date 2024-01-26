@@ -6,6 +6,7 @@ export class AudioPlayer {
   private audioSource?: AudioBufferSourceNode;
   private bufferedBytes = 0;
   private encodedAudioChunks?: EncodedAudioChunk[];
+  public isDonePlaying = false;
   private log = console.log.bind(this, '[AudioPlayer]');
 
   private settingUp?: Promise<void>;
@@ -112,6 +113,12 @@ export class AudioPlayer {
     this.audioSource.buffer = this.audioBuffer;
     this.audioSource.connect(this.audioContext.destination);
     this.audioSource.start();
+    this.audioSource.onended = this.onEnded.bind(this);
+  }
+
+  private onEnded() {
+    this.log('ended');
+    this.isDonePlaying = true;
   }
 
   private stopping?: Promise<void>;

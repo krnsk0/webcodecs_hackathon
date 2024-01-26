@@ -194,7 +194,12 @@ export class Player {
           currentTimeMs,
         });
 
-        if (this.videoPlayer.isDonePlaying()) {
+        if (
+          // Seems better to use only audio here but we could
+          // check both
+          // this.videoPlayer.isDonePlaying &&
+          this.audioPlayer.isDonePlaying
+        ) {
           this.log(`done playing ad ${adPodIndex}`);
           await this.audioPlayer?.stop();
           resolve();

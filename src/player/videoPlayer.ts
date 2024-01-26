@@ -44,6 +44,7 @@ export class VideoPlayer {
   private firstFrameDecodedTimestamp?: number;
   public droppedFrameCount = 0;
   private settingUp?: Promise<void>;
+  public isDonePlaying = false;
 
   public async setup({
     videoDecoderConfig,
@@ -141,13 +142,15 @@ export class VideoPlayer {
     this.startConvertingFrame({ videoFrame, timestamp });
   }
 
-  isDonePlaying() {
-    if (!this.videoDecoder) false;
-    return (
+  checkForCompletion() {
+    if (!this.videoDecoder) return;
+    if (
       this.encodedVideoChunks.length === 0 &&
       this.frameBuffer.length === 0 &&
       this.hasDecoderFlushed
-    );
+    ) {
+      this.isDonePlaying = true;
+    }
   }
 
   private startDecodingUpToCts(targetCts: number) {
@@ -325,17 +328,18 @@ export class VideoPlayer {
       }
       this.framesSuccessullyRendered += 1;
       this.lastDrawnFrameTimstamp = bufferEntry.timestamp;
+      this.checkForCompletion();
     }
   }
 
   public getSourceFramerate(): number {
-    if (this.isDonePlaying()) return 0;
+    if (this.isDonePlaying) return 0;
     if (this.frameDuration === undefined) return 0;
     return 1000 / this.frameDuration;
   }
 
   public getPlaybackFramerate(): number {
-    if (this.isDonePlaying()) return 0;
+    if (this.isDonePlaying) return 0;
     if (this.firstFrameDisplayTimestamp === undefined) return 0;
     return (
       this.framesSuccessullyRendered /
@@ -344,7 +348,7 @@ export class VideoPlayer {
   }
 
   public getConversionFramerate(): number {
-    if (this.isDonePlaying()) return 0;
+    if (this.isDonePlaying) return 0;
     if (this.firstFrameConversionTimestamp === undefined) return 0;
     return (
       this.framesConverted /
@@ -353,7 +357,7 @@ export class VideoPlayer {
   }
 
   public getDecodeFramerate(): number {
-    if (this.isDonePlaying()) return 0;
+    if (this.isDonePlaying) return 0;
     if (this.firstFrameDecodedTimestamp === undefined) return 0;
     return (
       this.framesDecoded /
@@ -362,14 +366,14 @@ export class VideoPlayer {
   }
 
   public getBufferedTimeSec(): number {
-    if (this.isDonePlaying()) return 0;
+    if (this.isDonePlaying) return 0;
     if (this.highestBufferedCts === -Infinity) return 0;
     if (this.lastDrawnFrameTimstamp === undefined) return 0;
     return (this.highestBufferedCts - this.lastDrawnFrameTimstamp) / 1_000;
   }
 
   public getBufferSizeBytes(): number {
-    if (this.isDonePlaying()) return 0;
+    if (this.isDonePlaying) return 0;
     return this.encodedVideoChunks.reduce(
       (acc, chunk) => acc + chunk.encodedVideoChunk.byteLength,
       0
