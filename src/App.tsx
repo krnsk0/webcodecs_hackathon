@@ -29,7 +29,8 @@ const mockAdResponse: AdPod[] = [
 function App() {
   const canvasContainer = useRef<HTMLDivElement>(null);
   const [player, setPlayerState] = useState<Player>();
-  const [slowUiMode, setSlowUiMode] = useState<boolean>(false);
+  const isAndroid = navigator.userAgent.includes('Android');
+  const [slowUiMode, setSlowUiMode] = useState<boolean>(isAndroid);
 
   const startEverything = () => {
     if (!canvasContainer.current) return;
