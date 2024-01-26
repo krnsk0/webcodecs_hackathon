@@ -220,6 +220,7 @@ export class Player {
       // TODO: catch/handle errors here; skip this ad?
       await adPlaybackPromise;
     }
+    this.playAdResponse(this.adResponse);
   }
 
   public async playAdResponse(adResponse: AdPod[]) {
