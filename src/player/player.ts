@@ -65,7 +65,7 @@ export class Player {
   }
 
   private async fetchAd(adPodIndex: number): Promise<Blob> {
-    this.log(`fetching ad ${adPodIndex} at ${Date.now()}`);
+    this.log(`fetching ad ${adPodIndex}`);
     const response = await fetch(this.adResponse[adPodIndex].video);
     return await response.blob();
   }
@@ -80,7 +80,7 @@ export class Player {
       this.mp4BlobPromises.push(mp4BlobPromise);
       // TODO: catch/handle errors here; skip this ad?
       await mp4BlobPromise;
-      this.log(`done fetching ${i} at ${Date.now()}`);
+      this.log(`done fetching ${i}`);
     }
   }
 
@@ -98,15 +98,11 @@ export class Player {
       mp4Blob,
       onVideoDecoderConfigReady: (config) => {
         this.adVideoDecoderConfigs[adPodIndex] = config;
-        this.log(
-          `video decoder config ready for ad ${adPodIndex} at ${Date.now()}`
-        );
+        this.log(`video decoder config ready for ad ${adPodIndex}`);
       },
       onAudioDecoderConfigReady: (config) => {
         this.adAudioDecoderConfigs[adPodIndex] = config;
-        this.log(
-          `audio decoder config ready for ad ${adPodIndex} at ${Date.now()}`
-        );
+        this.log(`audio decoder config ready for ad ${adPodIndex}`);
       },
       onVideoChunk: (chunk) => {
         if (!this.adEncodedVideoChunks[adPodIndex])
@@ -138,7 +134,7 @@ export class Player {
       this.demuxReadyPromises.push(demuxReadyPromise);
       // TODO: catch/handle errors here; skip this ad?
       await demuxReadyPromise;
-      this.log(`finished demuxing ad ${adPodIndex} at ${Date.now()}`);
+      this.log(`finished demuxing ad ${adPodIndex}`);
     }
   }
 
