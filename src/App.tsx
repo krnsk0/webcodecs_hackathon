@@ -52,7 +52,9 @@ function App() {
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
-        startEverything();
+        if (!hasStarted) {
+          startEverything();
+        }
       }
     };
     document.addEventListener('keydown', listener);
