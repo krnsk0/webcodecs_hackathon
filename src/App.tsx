@@ -29,7 +29,6 @@ const mockAdResponse: AdPod[] = [
 function App() {
   const canvasContainer = useRef<HTMLDivElement>(null);
   const [player, setPlayerState] = useState<Player>();
-  const [supported, setSupported] = useState<boolean>(false);
   const [slowUiMode, setSlowUiMode] = useState<boolean>(false);
 
   const startEverything = () => {
@@ -53,15 +52,11 @@ function App() {
     return () => document.removeEventListener('keydown', listener);
   });
 
-  useEffect(() => {
-    setSupported(isWebCodecsSupported());
-  }, [setSupported]);
-
   const uiUpdateInterval = slowUiMode
     ? SLOW_UI_UPDATE_INTERVAL
     : FAST_UI_UPDATE_INTERVAL;
 
-  if (!supported) {
+  if (!isWebCodecsSupported()) {
     return (
       <div>
         <div>WebCodecs is not supported in this browser.</div>
