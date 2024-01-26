@@ -5,7 +5,8 @@ import {
 import { Demuxer, EncodedVideoChunkWithDts } from './demuxer';
 import { AudioPlayer } from './audioPlayer';
 import { VideoPlayer } from './videoPlayer';
-import { log } from '../log';
+
+import { log } from './log';
 
 interface PlayerOptions {
   container: HTMLElement;

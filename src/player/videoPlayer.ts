@@ -1,4 +1,5 @@
-import { log } from '../log';
+import { log } from './log';
+
 import {
   BUFFER_TARGET,
   FRAME_CONVERSION_WORKERS,
@@ -17,12 +18,8 @@ export interface BufferEntry {
   timestamp: number;
 }
 
-const workDelegator = new WorkDelegator(
-  FRAME_CONVERSION_WORKERS,
-  new URL('./worker.js', import.meta.url)
-);
-
 export class VideoPlayer {
+  private static workDelegator?: WorkDelegator;
   public timestampsBeingDecoded: number[] = [];
   public timestampsBeingConverted: number[] = [];
   private encodedVideoChunks: EncodedVideoChunkWithDts[] = [];
@@ -47,6 +44,14 @@ export class VideoPlayer {
   private settingUp?: Promise<void>;
   public isDonePlaying = false;
 
+  constructor() {
+    if (VideoPlayer.workDelegator === undefined) {
+      VideoPlayer.workDelegator = new WorkDelegator(
+        FRAME_CONVERSION_WORKERS
+      );
+    }
+  }
+
   public async setup({
     videoDecoderConfig,
     encodedVideoChunks,
@@ -66,7 +71,7 @@ export class VideoPlayer {
   ) {
     this.encodedVideoChunks = encodedVideoChunks;
 
-    workDelegator.onMessageFromAnyWorker((event) => {
+    VideoPlayer.workDelegator?.onMessageFromAnyWorker((event) => {
       // TODO: fix implicit any here
       this.onFinishedConvertingFrame(event.data);
     });
@@ -230,7 +235,7 @@ export class VideoPlayer {
   }) {
     if (NOISY_LOGS) this.log(`starting conversion of frame ${timestamp}`);
     this.timestampsBeingConverted.push(timestamp);
-    workDelegator.postMessageToNextWorker(
+    VideoPlayer.workDelegator?.postMessageToNextWorker(
       {
         videoFrame,
         timestamp,
