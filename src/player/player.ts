@@ -1,3 +1,5 @@
+/// <reference path="../vite-env.d.ts" />
+/// <reference path="../mp4box.d.ts" />
 import {
   USE_AUDIO_AS_TIMING_SOURCE,
   USE_BITMAP_RENDERER_CANVAS,
@@ -5,7 +7,8 @@ import {
 import { Demuxer, EncodedVideoChunkWithDts } from './demuxer';
 import { AudioPlayer } from './audioPlayer';
 import { VideoPlayer } from './videoPlayer';
-import { log } from '../log';
+
+import { log } from './log';
 
 interface PlayerOptions {
   container: HTMLElement;

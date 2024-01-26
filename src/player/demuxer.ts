@@ -1,4 +1,4 @@
-import MP4Box, {
+import {
   MP4ArrayBuffer,
   MP4AudioTrack,
   MP4File,
@@ -6,6 +6,7 @@ import MP4Box, {
   MP4VideoTrack,
   Sample,
 } from 'mp4box';
+import * as MP4Box from 'mp4box';
 import { Writer } from './writer';
 
 export interface EncodedVideoChunkWithDts {

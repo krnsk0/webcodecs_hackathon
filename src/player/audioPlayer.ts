@@ -1,4 +1,4 @@
-import { log } from '../log';
+import { log } from './log';
 
 export class AudioPlayer {
   private audioDecoder?: AudioDecoder;
