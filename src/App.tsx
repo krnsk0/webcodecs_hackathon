@@ -9,6 +9,10 @@ import {
 } from './player/config';
 
 const mockAdResponse: AdPod[] = [
+  // sync test
+  {
+    video: './sync.mp4',
+  },
   // febreeze 480p 24fps AVC
   {
     video:
