@@ -29,6 +29,7 @@ const mockAdResponse: AdPod[] = [
 function App() {
   const canvasContainer = useRef<HTMLDivElement>(null);
   const [player, setPlayerState] = useState<Player>();
+  const [hasStarted, setHasStarted] = useState<boolean>(false);
   const isAndroid = navigator.userAgent.includes('Android');
   const [slowUiMode, setSlowUiMode] = useState<boolean>(isAndroid);
 
@@ -37,6 +38,7 @@ function App() {
     const player = new Player({ container: canvasContainer.current });
     setPlayerState(player);
     player.playAdResponse(mockAdResponse);
+    setHasStarted(true);
   };
 
   const toggleSlowUiMode = () => {
@@ -71,7 +73,7 @@ function App() {
   return (
     <>
       <div className="controls">
-        <button onClick={startEverything} autoFocus>
+        <button onClick={startEverything} autoFocus disabled={hasStarted}>
           start [spacebar]
         </button>
         <button onClick={() => window.location.reload()}>reload page</button>
