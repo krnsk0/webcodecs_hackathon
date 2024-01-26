@@ -70,7 +70,9 @@ function App() {
   return (
     <>
       <div className="controls">
-        <button onClick={startEverything}>start [spacebar]</button>
+        <button onClick={startEverything} autoFocus>
+          start [spacebar]
+        </button>
         <button onClick={() => window.location.reload()}>reload page</button>
         <label>
           <input
