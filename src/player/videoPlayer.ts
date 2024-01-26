@@ -1,3 +1,4 @@
+import { log } from '../log';
 import {
   BUFFER_TARGET,
   FRAME_CONVERSION_WORKERS,
@@ -94,7 +95,7 @@ export class VideoPlayer {
     }
   }
 
-  private log = console.log.bind(this, '[VideoPlayer]');
+  private log = log.bind(this, `VideoPlayer`);
 
   private handleDecoderErrors(error: unknown) {
     this.log('decoder error', error);
@@ -144,11 +145,13 @@ export class VideoPlayer {
 
   checkForCompletion() {
     if (!this.videoDecoder) return;
+    if (this.isDonePlaying) return;
     if (
       this.encodedVideoChunks.length === 0 &&
       this.frameBuffer.length === 0 &&
       this.hasDecoderFlushed
     ) {
+      this.log('setting isDonePlaying to true');
       this.isDonePlaying = true;
     }
   }
@@ -271,6 +274,8 @@ export class VideoPlayer {
   }
 
   private findFrameForTime(currentTimeMs: number): BufferEntry | undefined {
+    const roundedCurrentTime = Math.floor(currentTimeMs);
+
     const frameDuration = this.frameDuration;
     const timestampOffset = this.timestampOffset;
     if (frameDuration === undefined)
@@ -279,13 +284,15 @@ export class VideoPlayer {
       throw new Error('no known timestamp offset; did prebuffering complete?');
     const bufferEntry = this.frameBuffer.find((frame) => {
       const frameStart = frame.timestamp - timestampOffset;
-      const roundedCurrentTime = Math.floor(currentTimeMs);
       // we don't have to care about the upper bound because frames
       // are ordered
       return frameStart <= roundedCurrentTime;
     });
+
     return bufferEntry;
   }
+
+  private loggedVideoEndedEarly = false;
 
   public renderFrame({
     ctx,
@@ -298,14 +305,22 @@ export class VideoPlayer {
   }) {
     if (!ctx) throw new Error('no context provided to renderFrame');
     if (!canvas) throw new Error('no canvas provided to renderFrame');
-
+    this.checkForCompletion();
     this.startDecodingUpToCts(currentTimeMs + BUFFER_TARGET);
     this.purgeFramesBeforeTime(currentTimeMs);
     const bufferEntry = this.findFrameForTime(currentTimeMs);
     if (NOISY_LOGS)
       this.log(`attempting frame render at time ${currentTimeMs}`);
 
-    if (!bufferEntry) {
+    // distinguish dropped frames due to problems from requests for frame
+    // updates to due slightly longer video or a slow onended event from
+    // the audio player
+    if (this.loggedVideoEndedEarly) return;
+    if (!bufferEntry && this.isDonePlaying) {
+      this.loggedVideoEndedEarly = true;
+      this.log(`video ended early`);
+      return;
+    } else if (!bufferEntry) {
       this.log(`dropped frame at time ${currentTimeMs}`);
       this.droppedFrameCount += 1;
       return;
@@ -328,7 +343,6 @@ export class VideoPlayer {
       }
       this.framesSuccessullyRendered += 1;
       this.lastDrawnFrameTimstamp = bufferEntry.timestamp;
-      this.checkForCompletion();
     }
   }
 

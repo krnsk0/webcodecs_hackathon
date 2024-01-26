@@ -1,3 +1,5 @@
+import { log } from '../log';
+
 export class AudioPlayer {
   private audioDecoder?: AudioDecoder;
   private audioFrames: AudioData[] = [];
@@ -7,7 +9,7 @@ export class AudioPlayer {
   private bufferedBytes = 0;
   private encodedAudioChunks?: EncodedAudioChunk[];
   public isDonePlaying = false;
-  private log = console.log.bind(this, '[AudioPlayer]');
+  private log = log.bind(this, `AudioPlayer`);
 
   private settingUp?: Promise<void>;
 

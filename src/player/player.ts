@@ -2,6 +2,7 @@ import { USE_BITMAP_RENDERER_CANVAS } from './config';
 import { Demuxer, EncodedVideoChunkWithDts } from './demuxer';
 import { AudioPlayer } from './audioPlayer';
 import { VideoPlayer } from './videoPlayer';
+import { log, makeLogPrefix } from '../log';
 
 interface PlayerOptions {
   container: HTMLElement;
@@ -48,9 +49,7 @@ export class Player {
     this.currentAdStartTime = undefined;
   }
 
-  private log(...args: unknown[]) {
-    console.log('[Player]', ...args);
-  }
+  private log = log.bind(this, `Player`);
 
   private createCanvasElement() {
     const canvasEl = document.createElement('canvas');
