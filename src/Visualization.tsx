@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Player } from './player/player';
-import { FAST_UI_UPDATE_INTERVAL } from './player/config';
 
 interface VisualizationProps {
   player?: Player;
