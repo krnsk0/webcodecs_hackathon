@@ -65,8 +65,10 @@ export class Player {
   }
 
   private async fetchAd(adPodIndex: number): Promise<Blob> {
+    const startTime = Date.now();
     this.log(`fetching ad ${adPodIndex}`);
     const response = await fetch(this.adResponse[adPodIndex].video);
+    this.log(`fetched ad ${adPodIndex} in ${Date.now() - startTime}ms`);
     return await response.blob();
   }
 
@@ -127,6 +129,7 @@ export class Player {
       adPodIndex < this.adResponse.length;
       adPodIndex += 1
     ) {
+      const startTime = Date.now();
       const demuxReadyPromise = this.demuxAd(
         this.mp4BlobPromises[adPodIndex],
         adPodIndex
@@ -134,7 +137,9 @@ export class Player {
       this.demuxReadyPromises.push(demuxReadyPromise);
       // TODO: catch/handle errors here; skip this ad?
       await demuxReadyPromise;
-      this.log(`finished demuxing ad ${adPodIndex}`);
+      this.log(
+        `finished demuxing ad ${adPodIndex}; took ${Date.now() - startTime}ms`
+      );
     }
   }
 
@@ -155,6 +160,7 @@ export class Player {
     this.audioPlayer = new AudioPlayer();
     this.videoPlayer = new VideoPlayer();
 
+    const setupStart = Date.now();
     await Promise.all([
       this.audioPlayer.setup({
         audioDecoderConfig,
@@ -165,11 +171,14 @@ export class Player {
         encodedVideoChunks,
       }),
     ]);
+    this.log(`setup took ${Date.now() - setupStart}ms`);
 
+    const prebufferStart = Date.now();
     await Promise.all([
       this.videoPlayer.prebuffer(),
       this.audioPlayer.prebuffer(),
     ]);
+    this.log(`prebuffer took ${Date.now() - prebufferStart}ms`);
 
     // START PLAYBACK
     this.currentAdStartTime = Date.now();
