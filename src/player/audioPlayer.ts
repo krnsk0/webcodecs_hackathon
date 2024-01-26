@@ -117,7 +117,7 @@ export class AudioPlayer {
   }
 
   private onEnded() {
-    this.log('ended');
+    this.log('onended fired');
     this.isDonePlaying = true;
   }
 
