@@ -12,7 +12,13 @@ export interface AdPod {
   video: string;
 }
 
-export class Player {
+export type PlayerStates =
+  | 'playing'
+  | 'paused'
+  | 'stopped'
+  | 'playback_requested';
+
+export class Player extends EventTarget {
   private canvas?: HTMLCanvasElement;
   private ctx?: RenderingContext;
   private adResponse: AdPod[] = [];
@@ -29,8 +35,11 @@ export class Player {
   private adPodIndex = -1;
   private currentAdStartTime?: number;
   private animationFrameCallbackCount = 0;
+  private _state: PlayerStates = 'stopped';
 
-  constructor(private options: PlayerOptions) {}
+  constructor(private options: PlayerOptions) {
+    super();
+  }
 
   reset() {
     this.options.container.innerHTML = '';
@@ -157,6 +166,7 @@ export class Player {
     const encodedVideoChunks = this.adEncodedVideoChunks[adPodIndex];
     if (!encodedVideoChunks) throw new Error('no video chunks ready');
     this.log(`starting ad ${adPodIndex}`);
+    this.state = 'playback_requested';
     this.audioPlayer = new AudioPlayer();
     this.videoPlayer = new VideoPlayer();
 
@@ -171,24 +181,26 @@ export class Player {
         encodedVideoChunks,
       }),
     ]);
-    this.log(`setup took ${Date.now() - setupStart}ms`);
+    this.log(`setup phase took ${Date.now() - setupStart}ms`);
 
     const prebufferStart = Date.now();
     await Promise.all([
       this.videoPlayer.prebuffer(),
       this.audioPlayer.prebuffer(),
     ]);
-    this.log(`prebuffer took ${Date.now() - prebufferStart}ms`);
+    this.log(`prebuffer phase took ${Date.now() - prebufferStart}ms`);
 
     // START PLAYBACK
     this.currentAdStartTime = Date.now();
     this.animationFrameCallbackCount = 0;
+    this.audioPlayer.play();
     return new Promise((resolve) => {
       const animationFrameCallback = async () => {
         if (!this.currentAdStartTime)
           throw new Error('no current ad start time');
         if (!this.videoPlayer) return;
         if (!this.audioPlayer) return;
+        this.state = 'playing';
         this.animationFrameCallbackCount += 1;
         const currentTimeMs = 1_000 * this.audioPlayer.getCurrentTime();
 
@@ -213,23 +225,33 @@ export class Player {
     });
   }
 
-  private async startPlayingAds(): Promise<void> {
-    for (let i = 0; i < this.adResponse.length; i += 1) {
-      // wait for ad to fetch and then demux if it hasn't
-      await this.demuxReadyPromises[i];
+  public async play(): Promise<void> {
+    if (this.state === 'stopped') {
+      for (let i = 0; i < this.adResponse.length; i += 1) {
+        // wait for ad to fetch and then demux if it hasn't
+        await this.demuxReadyPromises[i];
 
-      // kick off playback
-      this.adPodIndex = i;
-      const adPlaybackPromise = this.startAd({
-        audioDecoderConfig: this.adAudioDecoderConfigs[i],
-        videoDecoderConfig: this.adVideoDecoderConfigs[i],
-        adPodIndex: i,
-      });
-      this.adPlaybackPromises.push(adPlaybackPromise);
-      // TODO: catch/handle errors here; skip this ad?
-      await adPlaybackPromise;
+        // kick off playback
+        this.adPodIndex = i;
+        const adPlaybackPromise = this.startAd({
+          audioDecoderConfig: this.adAudioDecoderConfigs[i],
+          videoDecoderConfig: this.adVideoDecoderConfigs[i],
+          adPodIndex: i,
+        });
+        this.adPlaybackPromises.push(adPlaybackPromise);
+        // TODO: catch/handle errors here; skip this ad?
+        await adPlaybackPromise;
+      }
+      this.playAdResponse(this.adResponse);
+    } else if (this.state === 'paused') {
+      // no need to pause video player
+      return this.audioPlayer?.play();
     }
-    this.playAdResponse(this.adResponse);
+  }
+
+  async pause() {
+    // no need to pause video player
+    return this.audioPlayer?.pause();
   }
 
   public async playAdResponse(adResponse: AdPod[]) {
@@ -238,7 +260,7 @@ export class Player {
     this.createCanvasElement();
     this.startFetchingAds();
     this.startDemuxingAds();
-    this.startPlayingAds();
+    this.play();
   }
 
   public visualizationData() {
@@ -276,5 +298,18 @@ export class Player {
       videoBufferSizeBytes: this.videoPlayer?.getBufferSizeBytes() || 0,
       audioBufferSizeBytes: this.audioPlayer?.getBufferSizeBytes() || 0,
     };
+  }
+
+  get state() {
+    return this._state;
+  }
+
+  set state(state: PlayerStates) {
+    this.dispatchEvent(
+      new CustomEvent<{ state: PlayerStates }>('statechange', {
+        detail: { state: this.state },
+      })
+    );
+    this._state = state;
   }
 }

@@ -7,6 +7,7 @@ import {
   FAST_UI_UPDATE_INTERVAL,
   SLOW_UI_UPDATE_INTERVAL,
 } from './player/config';
+import { usePlayerState } from './usePlayerState';
 
 const mockAdResponse: AdPod[] = [
   // febreeze 480p 24fps AVC
@@ -32,6 +33,7 @@ function App() {
   const [hasStarted, setHasStarted] = useState<boolean>(false);
   const isAndroid = navigator.userAgent.includes('Android');
   const [slowUiMode, setSlowUiMode] = useState<boolean>(isAndroid);
+  const state = usePlayerState(player);
 
   const startEverything = () => {
     if (!canvasContainer.current) return;
@@ -73,10 +75,6 @@ function App() {
   return (
     <>
       <div className="controls">
-        <button onClick={startEverything} autoFocus disabled={hasStarted}>
-          start [spacebar]
-        </button>
-        <button onClick={() => window.location.reload()}>reload page</button>
         <label>
           <input
             type="checkbox"
@@ -85,6 +83,11 @@ function App() {
           ></input>
           slow ui mode
         </label>
+        <button onClick={startEverything} autoFocus disabled={hasStarted}>
+          start [spacebar]
+        </button>
+        <button onClick={() => window.location.reload()}>reload page</button>
+        <div className="state">{state}</div>
       </div>
       <div className="upper">
         <div ref={canvasContainer} id="canvas-container"></div>
