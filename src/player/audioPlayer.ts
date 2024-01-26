@@ -114,7 +114,6 @@ export class AudioPlayer {
     this.audioSource = this.audioContext.createBufferSource();
     this.audioSource.buffer = this.audioBuffer;
     this.audioSource.connect(this.audioContext.destination);
-    this.audioSource.start();
     this.audioSource.onended = this.onEnded.bind(this);
   }
 
@@ -123,9 +122,39 @@ export class AudioPlayer {
     this.isDonePlaying = true;
   }
 
-  private stopping?: Promise<void>;
+  private hasEverStarted = false;
+  private playing = false;
 
+  private resuming?: Promise<void>;
+  async play() {
+    if (!this.audioSource) return;
+    if (!this.hasEverStarted) {
+      this.log('starting audio playback');
+      this.audioSource.start();
+      this.hasEverStarted = true;
+      this.playing = true;
+      return;
+    } else if (!this.playing && !this.resuming) {
+      this.log('resuming audio playback');
+      this.resuming = this.audioContext?.resume();
+      await this.resuming;
+      this.resuming = undefined;
+      this.playing = true;
+    }
+  }
+
+  private pausing?: Promise<void>;
+  public async pause(): Promise<void> {
+    if (this.pausing || !this.playing) return;
+    this.pausing = this.audioContext?.suspend();
+    await this.pausing;
+    this.pausing = undefined;
+    this.playing = false;
+  }
+
+  private stopping?: Promise<void>;
   public async stop(): Promise<void> {
+    if (this.stopping) return;
     this.settingUp = undefined;
     if (this.audioDecoder) {
       this.audioDecoder.close();
