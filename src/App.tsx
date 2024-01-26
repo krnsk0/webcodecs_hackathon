@@ -29,18 +29,16 @@ const mockAdResponse: AdPod[] = [
 
 function App() {
   const canvasContainer = useRef<HTMLDivElement>(null);
-  const [player, setPlayerState] = useState<Player>();
-  const [hasStarted, setHasStarted] = useState<boolean>(false);
+  const playerRef = useRef<Player>(new Player());
+  const player = playerRef.current;
   const isAndroid = navigator.userAgent.includes('Android');
   const [slowUiMode, setSlowUiMode] = useState<boolean>(isAndroid);
   const state = usePlayerState(player);
 
   const startEverything = () => {
     if (!canvasContainer.current) return;
-    const player = new Player({ container: canvasContainer.current });
-    setPlayerState(player);
-    player.playAdResponse(mockAdResponse);
-    setHasStarted(true);
+    if (!player) return;
+    player.playAdResponse(mockAdResponse, canvasContainer.current);
   };
 
   const toggleSlowUiMode = () => {
@@ -72,6 +70,22 @@ function App() {
     );
   }
 
+  const handlePlayClick = () => {
+    if (state === 'stopped') {
+      startEverything();
+    } else if (state === 'paused') {
+      player?.play();
+    } else if (state === 'playing') {
+      player?.pause();
+    }
+  };
+
+  const playButtonText = ['playing', 'playback_requested'].includes(state)
+    ? 'pause'
+    : 'play';
+
+  const disablePlayButton = ['playback_requested'].includes(state);
+
   return (
     <>
       <div className="controls">
@@ -83,8 +97,12 @@ function App() {
           ></input>
           slow ui mode
         </label>
-        <button onClick={startEverything} autoFocus disabled={hasStarted}>
-          start [spacebar]
+        <button
+          onClick={handlePlayClick}
+          autoFocus
+          disabled={disablePlayButton}
+        >
+          {playButtonText} [spacebar]
         </button>
         <button onClick={() => window.location.reload()}>reload page</button>
         <div className="state">{state}</div>

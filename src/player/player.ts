@@ -4,10 +4,6 @@ import { AudioPlayer } from './audioPlayer';
 import { VideoPlayer } from './videoPlayer';
 import { log } from '../log';
 
-interface PlayerOptions {
-  container: HTMLElement;
-}
-
 export interface AdPod {
   video: string;
 }
@@ -19,6 +15,7 @@ export type PlayerStates =
   | 'playback_requested';
 
 export class Player extends EventTarget {
+  private container?: HTMLDivElement;
   private canvas?: HTMLCanvasElement;
   private ctx?: RenderingContext;
   private adResponse: AdPod[] = [];
@@ -37,12 +34,12 @@ export class Player extends EventTarget {
   private animationFrameCallbackCount = 0;
   private _state: PlayerStates = 'stopped';
 
-  constructor(private options: PlayerOptions) {
+  constructor() {
     super();
   }
 
   reset() {
-    this.options.container.innerHTML = '';
+    if (this.container) this.container.innerHTML = '';
     this.canvas = undefined;
     this.ctx = undefined;
     this.adResponse = [];
@@ -56,15 +53,17 @@ export class Player extends EventTarget {
     this.adPlaybackPromises = [];
     this.adPodIndex = 0;
     this.currentAdStartTime = undefined;
+    this.state = 'stopped';
   }
 
   private log = log.bind(this, `Player`);
 
   private createCanvasElement() {
+    if (!this.container) throw new Error('no container');
     const canvasEl = document.createElement('canvas');
     canvasEl.width = 1600;
     canvasEl.height = 900;
-    this.options.container.appendChild(canvasEl);
+    this.container.appendChild(canvasEl);
     this.canvas = canvasEl;
     const ctx = canvasEl.getContext(
       USE_BITMAP_RENDERER_CANVAS ? 'bitmaprenderer' : '2d'
@@ -166,7 +165,6 @@ export class Player extends EventTarget {
     const encodedVideoChunks = this.adEncodedVideoChunks[adPodIndex];
     if (!encodedVideoChunks) throw new Error('no video chunks ready');
     this.log(`starting ad ${adPodIndex}`);
-    this.state = 'playback_requested';
     this.audioPlayer = new AudioPlayer();
     this.videoPlayer = new VideoPlayer();
 
@@ -194,13 +192,13 @@ export class Player extends EventTarget {
     this.currentAdStartTime = Date.now();
     this.animationFrameCallbackCount = 0;
     this.audioPlayer.play();
+    this.state = 'playing';
     return new Promise((resolve) => {
       const animationFrameCallback = async () => {
         if (!this.currentAdStartTime)
           throw new Error('no current ad start time');
         if (!this.videoPlayer) return;
         if (!this.audioPlayer) return;
-        this.state = 'playing';
         this.animationFrameCallbackCount += 1;
         const currentTimeMs = 1_000 * this.audioPlayer.getCurrentTime();
 
@@ -226,7 +224,12 @@ export class Player extends EventTarget {
   }
 
   public async play(): Promise<void> {
-    if (this.state === 'stopped') {
+    if (this.state === 'paused') {
+      // no need to pause video player
+      return this.audioPlayer?.play();
+    }
+
+    if (['stopped', 'playback_requested'].includes(this.state)) {
       for (let i = 0; i < this.adResponse.length; i += 1) {
         // wait for ad to fetch and then demux if it hasn't
         await this.demuxReadyPromises[i];
@@ -243,9 +246,6 @@ export class Player extends EventTarget {
         await adPlaybackPromise;
       }
       this.playAdResponse(this.adResponse);
-    } else if (this.state === 'paused') {
-      // no need to pause video player
-      return this.audioPlayer?.play();
     }
   }
 
@@ -254,8 +254,10 @@ export class Player extends EventTarget {
     return this.audioPlayer?.pause();
   }
 
-  public async playAdResponse(adResponse: AdPod[]) {
+  public async playAdResponse(adResponse: AdPod[], container?: HTMLDivElement) {
     this.reset();
+    this.container = container;
+    this.state = 'playback_requested';
     this.adResponse = adResponse;
     this.createCanvasElement();
     this.startFetchingAds();
@@ -307,7 +309,7 @@ export class Player extends EventTarget {
   set state(state: PlayerStates) {
     this.dispatchEvent(
       new CustomEvent<{ state: PlayerStates }>('statechange', {
-        detail: { state: this.state },
+        detail: { state },
       })
     );
     this._state = state;
