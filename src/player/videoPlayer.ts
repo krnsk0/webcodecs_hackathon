@@ -43,6 +43,7 @@ export class VideoPlayer {
   private framesDecoded = 0;
   private firstFrameDecodedTimestamp?: number;
   public droppedFrameCount = 0;
+  private settingUp?: Promise<void>;
 
   public async setup({
     videoDecoderConfig,
@@ -51,6 +52,16 @@ export class VideoPlayer {
     videoDecoderConfig: VideoDecoderConfig;
     encodedVideoChunks: EncodedVideoChunkWithDts[];
   }) {
+    if (!this.settingUp) {
+      this.settingUp = this._setup(videoDecoderConfig, encodedVideoChunks);
+    }
+    return this.settingUp;
+  }
+
+  private async _setup(
+    videoDecoderConfig: VideoDecoderConfig,
+    encodedVideoChunks: EncodedVideoChunkWithDts[]
+  ) {
     this.encodedVideoChunks = encodedVideoChunks;
 
     workDelegator.onMessageFromAnyWorker((event) => {
