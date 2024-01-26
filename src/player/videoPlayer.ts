@@ -333,6 +333,7 @@ export class VideoPlayer {
       this.log('error drawing to canvas', error);
     } finally {
       if (this.firstFrameDisplayTimestamp === undefined) {
+        this.log('displaying first frame');
         this.firstFrameDisplayTimestamp = Date.now();
       }
       this.framesSuccessullyRendered += 1;
