@@ -226,7 +226,9 @@ export class Player extends EventTarget {
   public async play(): Promise<void> {
     if (this.state === 'paused') {
       // no need to pause video player
-      return this.audioPlayer?.play();
+      this.state = 'playback_requested';
+      await this.audioPlayer?.play();
+      this.state = 'playing';
     }
 
     if (['stopped', 'playback_requested'].includes(this.state)) {
@@ -251,7 +253,8 @@ export class Player extends EventTarget {
 
   async pause() {
     // no need to pause video player
-    return this.audioPlayer?.pause();
+    await this.audioPlayer?.pause();
+    this.state = 'paused';
   }
 
   public async playAdResponse(adResponse: AdPod[], container?: HTMLDivElement) {

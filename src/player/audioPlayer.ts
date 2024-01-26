@@ -122,30 +122,39 @@ export class AudioPlayer {
     this.isDonePlaying = true;
   }
 
-  private started = false;
+  private hasEverStarted = false;
+  private playing = false;
 
   private resuming?: Promise<void>;
   async play() {
+    console.log('DEBUG', {
+      resuming: this.resuming,
+      playing: this.playing,
+      hasEverStarted: this.hasEverStarted,
+    });
     if (!this.audioSource) return;
-    if (!this.started) {
+    if (!this.hasEverStarted) {
       this.log('starting audio playback');
       this.audioSource.start();
+      this.hasEverStarted = true;
+      this.playing = true;
       return;
-    } else {
-      if (this.resuming) return;
+    } else if (!this.playing && !this.resuming) {
       this.log('resuming audio playback');
       this.resuming = this.audioContext?.resume();
       await this.resuming;
       this.resuming = undefined;
+      this.playing = true;
     }
   }
 
   private pausing?: Promise<void>;
   public async pause(): Promise<void> {
-    if (this.pausing) return;
+    if (this.pausing || !this.playing) return;
     this.pausing = this.audioContext?.suspend();
     await this.pausing;
     this.pausing = undefined;
+    this.playing = false;
   }
 
   private stopping?: Promise<void>;
