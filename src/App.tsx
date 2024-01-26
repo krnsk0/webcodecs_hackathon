@@ -89,14 +89,6 @@ function App() {
   return (
     <>
       <div className="controls">
-        <label>
-          <input
-            type="checkbox"
-            checked={slowUiMode}
-            onChange={toggleSlowUiMode}
-          ></input>
-          slow ui mode
-        </label>
         <button
           onClick={handlePlayClick}
           autoFocus
@@ -105,10 +97,23 @@ function App() {
           {playButtonText} [spacebar]
         </button>
         <button onClick={() => window.location.reload()}>reload page</button>
-        <div className="state">{state}</div>
+        <label>
+          <input
+            type="checkbox"
+            checked={slowUiMode}
+            onChange={toggleSlowUiMode}
+          ></input>
+          slow ui mode
+        </label>
       </div>
+
       <div className="upper">
-        <div ref={canvasContainer} id="canvas-container"></div>
+        <div id="player-outer">
+          <div className="overlay">
+            <div className="state">{state}</div>
+          </div>
+          <div ref={canvasContainer} className="canvas-container"></div>
+        </div>
         <Metrics player={player} uiUpdateInterval={uiUpdateInterval} />
       </div>
 

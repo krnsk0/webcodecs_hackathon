@@ -39,18 +39,16 @@ body {
   width: 100%;
   margin-bottom: 0.5em;
 }
-#canvas-container {
+#player-outer {
   display: flex;
   justify-content: center;
   height: var(--canvas-height);
   width: calc(var(--canvas-height) * (16 / 9));
-  border: 1px solid black;
 }
 
 canvas {
   height: var(--canvas-height);
   width: calc(var(--canvas-height) * (16 / 9));
-  border: 1px solid black;
 }
 .controls {
   margin: 1em;
@@ -58,6 +56,29 @@ canvas {
   justify-content: center;
   align-items: center;
   width: 100%;
+  padding: 0 2em;
+}
+.canvas-container {
+  width: 100%;
+  height: 100%;
+  border: 1px solid black;
+}
+.overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  height: var(--canvas-height);
+  width: calc(var(--canvas-height) * (16 / 9));
+}
+.state {
+  position: absolute;
+  z-index: 100;
+  padding: 0.5em;
+  bottom: 0em;
+  left: 0em;
+  background-color: black;
+  opacity: 0.5;
+  color: lightgreen;
 }
 label {
   position: relative;
@@ -69,6 +90,7 @@ label {
 button {
   font-size: 1.2em;
   margin: 0 0.5em;
+  width: 10em;
 }
 input {
   position: relative;

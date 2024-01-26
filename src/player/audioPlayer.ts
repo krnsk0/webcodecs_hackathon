@@ -127,11 +127,6 @@ export class AudioPlayer {
 
   private resuming?: Promise<void>;
   async play() {
-    console.log('DEBUG', {
-      resuming: this.resuming,
-      playing: this.playing,
-      hasEverStarted: this.hasEverStarted,
-    });
     if (!this.audioSource) return;
     if (!this.hasEverStarted) {
       this.log('starting audio playback');
