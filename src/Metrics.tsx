@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Player } from './player/player';
-import { UI_UPDATE_INTERVAL } from './player/config';
 
 interface DataProps {
   player?: Player;
+  uiUpdateInterval: number;
 }
 
-export const Metrics = ({ player }: DataProps) => {
+export const Metrics = ({ player, uiUpdateInterval }: DataProps) => {
   const [data, setData] = useState<ReturnType<Player['getMetrics']>>();
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (!player) return;
       setData(player.getMetrics());
-    }, UI_UPDATE_INTERVAL);
+    }, uiUpdateInterval);
     return () => clearInterval(interval);
-  }, [setData, player]);
+  }, [setData, player, uiUpdateInterval]);
 
   const url = data?.url?.split('/').pop() ?? 'none';
   const dimensions = `${data?.sourceWidth ?? 0}x${data?.sourceHeight ?? 0}`;

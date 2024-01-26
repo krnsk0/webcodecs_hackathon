@@ -20,5 +20,8 @@ export const FRAME_CONVERSION_WORKERS = 3;
 // how many frames behind the playhead should we start purge frames in the buffer?
 export const FRAME_PURGE_THRESHOLD = 4;
 
-// how fast to update the visualizations / metrics
-export const UI_UPDATE_INTERVAL = 1000;
+// how fast to update the visualizations / metrics with no checkbox checked
+export const FAST_UI_UPDATE_INTERVAL = 100;
+
+// how fast to update the visualizations / metrics with the checkbox checked
+export const SLOW_UI_UPDATE_INTERVAL = 1000;

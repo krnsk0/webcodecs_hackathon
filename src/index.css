@@ -62,6 +62,11 @@ button {
   font-size: 1.2em;
   margin: 0 0.5em;
 }
+input {
+  position: relative;
+  top: 0.2em;
+  margin-right: 0.5em;
+}
 .viz-outer {
   width: 100%;
   display: flex;

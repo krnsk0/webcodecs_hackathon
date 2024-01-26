@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Player } from './player/player';
-import { UI_UPDATE_INTERVAL } from './player/config';
+import { FAST_UI_UPDATE_INTERVAL } from './player/config';
 
 interface VisualizationProps {
   player?: Player;
+  uiUpdateInterval: number;
 }
 
-export const Visualization = ({ player }: VisualizationProps) => {
+export const Visualization = ({
+  player,
+  uiUpdateInterval,
+}: VisualizationProps) => {
   const [vizData, setVizData] =
     useState<ReturnType<Player['visualizationData']>>();
 
@@ -14,9 +18,9 @@ export const Visualization = ({ player }: VisualizationProps) => {
     const interval = setInterval(() => {
       if (!player) return;
       setVizData(player.visualizationData());
-    }, UI_UPDATE_INTERVAL);
+    }, uiUpdateInterval);
     return () => clearInterval(interval);
-  }, [setVizData, player]);
+  }, [setVizData, player, uiUpdateInterval]);
 
   return (
     <div className="viz-outer">

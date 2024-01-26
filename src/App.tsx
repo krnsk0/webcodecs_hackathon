@@ -3,6 +3,10 @@ import { AdPod, Player } from './player/player';
 import { Visualization } from './Visualization';
 import { Metrics } from './Metrics';
 import { isWebCodecsSupported } from './isWebcodecsSupported';
+import {
+  FAST_UI_UPDATE_INTERVAL,
+  SLOW_UI_UPDATE_INTERVAL,
+} from './player/config';
 
 const mockAdResponse: AdPod[] = [
   // grubhub 480p 24fps AVC
@@ -26,12 +30,17 @@ function App() {
   const canvasContainer = useRef<HTMLDivElement>(null);
   const [player, setPlayerState] = useState<Player>();
   const [supported, setSupported] = useState<boolean>(false);
+  const [slowUiMode, setSlowUiMode] = useState<boolean>(false);
 
   const startEverything = () => {
     if (!canvasContainer.current) return;
     const player = new Player({ container: canvasContainer.current });
     setPlayerState(player);
     player.playAdResponse(mockAdResponse);
+  };
+
+  const toggleSlowUiMode = () => {
+    setSlowUiMode(!slowUiMode);
   };
 
   useEffect(() => {
@@ -48,6 +57,10 @@ function App() {
     setSupported(isWebCodecsSupported());
   }, [setSupported]);
 
+  const uiUpdateInterval = slowUiMode
+    ? SLOW_UI_UPDATE_INTERVAL
+    : FAST_UI_UPDATE_INTERVAL;
+
   if (!supported) {
     return (
       <div>
@@ -63,14 +76,22 @@ function App() {
     <>
       <div className="controls">
         <button onClick={startEverything}>start [spacebar]</button>
-        <button onClick={() => window.location.reload()}>reload</button>
+        <button onClick={() => window.location.reload()}>reload page</button>
+        <label>
+          <input
+            type="checkbox"
+            checked={slowUiMode}
+            onChange={toggleSlowUiMode}
+          ></input>
+          slow down UI updates
+        </label>
       </div>
       <div className="upper">
         <div ref={canvasContainer} id="canvas-container"></div>
-        <Metrics player={player} />
+        <Metrics player={player} uiUpdateInterval={uiUpdateInterval} />
       </div>
 
-      <Visualization player={player} />
+      <Visualization player={player} uiUpdateInterval={uiUpdateInterval} />
     </>
   );
 }
