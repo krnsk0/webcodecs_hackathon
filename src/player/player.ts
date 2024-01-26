@@ -1,4 +1,7 @@
-import { USE_BITMAP_RENDERER_CANVAS } from './config';
+import {
+  USE_AUDIO_AS_TIMING_SOURCE,
+  USE_BITMAP_RENDERER_CANVAS,
+} from './config';
 import { Demuxer, EncodedVideoChunkWithDts } from './demuxer';
 import { AudioPlayer } from './audioPlayer';
 import { VideoPlayer } from './videoPlayer';
@@ -190,7 +193,13 @@ export class Player {
         if (!this.videoPlayer) return;
         if (!this.audioPlayer) return;
         this.animationFrameCallbackCount += 1;
-        const currentTimeMs = 1_000 * this.audioPlayer.getCurrentTime();
+
+        let currentTimeMs: number;
+        if (USE_AUDIO_AS_TIMING_SOURCE) {
+          currentTimeMs = 1_000 * this.audioPlayer.getCurrentTime();
+        } else {
+          currentTimeMs = Date.now() - this.currentAdStartTime;
+        }
 
         this.videoPlayer.renderFrame({
           ctx: this.ctx,

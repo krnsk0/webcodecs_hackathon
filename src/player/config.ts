@@ -25,3 +25,6 @@ export const FAST_UI_UPDATE_INTERVAL = 100;
 
 // how fast to update the visualizations / metrics with the checkbox checked
 export const SLOW_UI_UPDATE_INTERVAL = 1000;
+
+// should we call currentTime on audio context for sync purposes
+export const USE_AUDIO_AS_TIMING_SOURCE = false;
