@@ -93,9 +93,7 @@ export class VideoPlayer {
     }
   }
 
-  private log(...args: unknown[]) {
-    console.log(`[VideoPlayer]`, ...args);
-  }
+  private log = console.log.bind(this, '[VideoPlayer]');
 
   private handleDecoderErrors(error: unknown) {
     this.log('decoder error', error);
