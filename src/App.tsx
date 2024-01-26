@@ -9,10 +9,6 @@ import {
 } from './player/config';
 
 const mockAdResponse: AdPod[] = [
-  // sync test
-  {
-    video: './sync.mp4',
-  },
   // febreeze 480p 24fps AVC
   {
     video:
@@ -28,6 +24,10 @@ const mockAdResponse: AdPod[] = [
     video:
       'https://ark.tubi-staging.video/v2/cb526b6f284b76e795ab90e876278ad6/f46fa51f-0cd4-4b0b-bed8-4eb35bd35ba9/1920x1080_3400k.mp4',
   },
+  // sync test
+  // {
+  //   video: './sync.mp4',
+  // },
 ];
 
 function App() {
