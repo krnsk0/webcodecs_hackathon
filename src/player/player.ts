@@ -1,5 +1,3 @@
-/// <reference path="../vite-env.d.ts" />
-/// <reference path="../mp4box.d.ts" />
 import {
   USE_AUDIO_AS_TIMING_SOURCE,
   USE_BITMAP_RENDERER_CANVAS,

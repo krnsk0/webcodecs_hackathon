@@ -4,6 +4,10 @@
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "commonjs",
+    "types": [
+      "./src/mp4box.d.ts",
+      "./src/vite-env.d.ts"
+    ],
     "skipLibCheck": true,
 
     /* Bundler mode */
