@@ -78,7 +78,7 @@ function App() {
             checked={slowUiMode}
             onChange={toggleSlowUiMode}
           ></input>
-          slow down UI updates
+          slow ui mode
         </label>
       </div>
       <div className="upper">
@@ -86,7 +86,9 @@ function App() {
         <Metrics player={player} uiUpdateInterval={uiUpdateInterval} />
       </div>
 
-      <Visualization player={player} uiUpdateInterval={uiUpdateInterval} />
+      {!slowUiMode && (
+        <Visualization player={player} uiUpdateInterval={uiUpdateInterval} />
+      )}
     </>
   );
 }

@@ -15,7 +15,7 @@ export const PREBUFFER_TARGET = 1000;
 export const BUFFER_TARGET = 500;
 
 // how many workers to use for frame conversion?
-export const FRAME_CONVERSION_WORKERS = 3;
+export const FRAME_CONVERSION_WORKERS = 1;
 
 // how many frames behind the playhead should we start purge frames in the buffer?
 export const FRAME_PURGE_THRESHOLD = 4;
