@@ -292,8 +292,6 @@ export class VideoPlayer {
     return bufferEntry;
   }
 
-  private loggedVideoEndedEarly = false;
-
   public renderFrame({
     ctx,
     canvas,
@@ -315,12 +313,8 @@ export class VideoPlayer {
     // distinguish dropped frames due to problems from requests for frame
     // updates to due slightly longer video or a slow onended event from
     // the audio player
-    if (this.loggedVideoEndedEarly) return;
-    if (!bufferEntry && this.isDonePlaying) {
-      this.loggedVideoEndedEarly = true;
-      this.log(`video ended early`);
-      return;
-    } else if (!bufferEntry) {
+    if (this.isDonePlaying) return;
+    if (!bufferEntry) {
       this.log(`dropped frame at time ${currentTimeMs}`);
       this.droppedFrameCount += 1;
       return;
