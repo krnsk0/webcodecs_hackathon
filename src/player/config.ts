@@ -9,13 +9,13 @@ export const REQUEST_HARDWARE_ACCELERATION = true;
 export const OPTIMIZE_FOR_LATENCY_FLAG = true;
 
 // how many ms should we attempt to prebuffer?
-export const PREBUFFER_TARGET = 1000;
+export const PREBUFFER_TARGET = 500;
 
 // how far ahead of the playhead should we buffer?
 export const BUFFER_TARGET = 500;
 
 // how many workers to use for frame conversion?
-export const FRAME_CONVERSION_WORKERS = 1;
+export const FRAME_CONVERSION_WORKERS = 3;
 
 // how many frames behind the playhead should we start purge frames in the buffer?
 export const FRAME_PURGE_THRESHOLD = 4;
